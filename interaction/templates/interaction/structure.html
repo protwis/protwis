@@ -100,33 +100,41 @@ canvas {
       background-color: #ddd;
     }
     .stat-section.ligand-section {
-      gap: 12px 30px;
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 0 30px;
+      align-content: start;
       min-width: 90px;
     }
-    .ligand-section .stat-col,
-    .ligand-section .stat-value {
-      min-width: 0;
+    .ligand-section .stat-label {
+      text-align: center;
+      padding: 0 6px;
     }
-    .ligand-name-col .stat-value {
+    .ligand-section .ligand-row {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      border-radius: 3px;
+    }
+    .ligand-section .ligand-row.ligand-row-active {
+      background: rgba(92, 184, 92, 0.15);
+    }
+    .ligand-row .ligand-name {
+      text-align: center;
       white-space: nowrap;
       overflow-wrap: normal;
       word-break: normal;
-    }
-    .ligand-section .function-col {
-      min-width: 90px;
-    }
-    .function-col .stat-value {
-      white-space: nowrap;
-    }
-    .ligand-section .stat-col {
-      padding: 0 6px;
-    }
-    .ligand-name-col .expand {
       max-width: 190px;
+      min-width: 0;
     }
-    .ligand-name-col .expand:hover {
+    .ligand-row .ligand-name:hover {
       overflow-wrap: break-word;
       word-break: break-word;
+    }
+    .ligand-row .ligand-function {
+      text-align: center;
+      white-space: nowrap;
+      min-width: 90px;
     }
     .stat-col {
       padding: 0 10px;
@@ -228,22 +236,14 @@ canvas {
                 </div>
             </div>
             <div class="stat-section ligand-section">
-                <div class="stat-col text-center ligand-name-col">
-                    <div class="text-info stat-label">{% if ligands|length == 1 %}Ligand{% else %}Ligands{% endif %}</div>
-                    <div class="stat-value">
-                        {% for ligand in ligands %}
-                        <div class="expand">{{ ligand.name|safe }}</div>
-                        {% endfor %}
-                    </div>
+                <div class="text-info stat-label">{% if ligands|length == 1 %}Ligand{% else %}Ligands{% endif %}</div>
+                <div class="text-info stat-label">Function</div>
+                {% for ligand in ligands %}
+                <div class="stat-value ligand-row" data-ligand-id="{{ ligand.anchor_id }}">
+                    <div class="expand ligand-name">{{ ligand.label|safe }}</div>
+                    <div class="ligand-function">{{ ligand.role }}</div>
                 </div>
-                <div class="stat-col text-center function-col">
-                    <div class="text-info stat-label">Function</div>
-                    <div class="stat-value">
-                        {% for ligand in ligands %}
-                        <div>{{ ligand.role }}</div>
-                        {% endfor %}
-                    </div>
-                </div>
+                {% endfor %}
             </div>
             <div class="stat-section">
                 <div class="stat-col text-center">
@@ -260,7 +260,7 @@ canvas {
 {% if ligands|length > 1 %}
 <div class="btn-group ligand-switcher" style="margin-bottom:20px; display:flex;" role="group">
     {% for ligand in ligands %}
-    <a href="#" class="btn ligand-switch-btn {% if forloop.first %}btn-success active{% else %}btn-default{% endif %}" data-ligand-id="{{ ligand.id }}" style="flex:1;">{{ ligand.name|safe }}</a>
+    <a href="#" class="btn ligand-switch-btn {% if forloop.first %}btn-success active{% else %}btn-default{% endif %}" data-ligand-id="{{ ligand.anchor_id }}" style="flex:1;">{{ ligand.label|safe }}</a>
     {% endfor %}
 </div>
 {% endif %}
@@ -338,7 +338,7 @@ canvas {
                         </tr>
                     </thead>
                     {% for residue in residues %}
-                    <tr data-ligand-id="{{ residue.ligand_id }}">
+                    <tr data-ligand-id="{{ residue.anchor_id }}">
                     <td class="expand"><a class="struct" {% if residue.ligand_type == 'peptide' and residue.ligand_sequence %}data-ligand-type="peptide" data-sequence="{{ residue.ligand_sequence }}"{% else %}rel="Generate_from_SMILES" data-ligand-type="smiles" data-smiles="{{ residue.ligand_smiles }}"{% endif %} href="/ligand/{{ residue.ligand_id }}/info" target="_blank">{{residue.ligand|safe}}</a></td>
                     <td>{{residue.aa}}{{residue.pos}}</td>
                     <td>{{residue.gpcrdb}}</td>
@@ -357,12 +357,12 @@ canvas {
 
 <div id="panel-ligand">
         {% for ligand in ligands %}
-        <div data-ligand-id="{{ ligand.id }}">
+        <div data-ligand-id="{{ ligand.anchor_id }}">
         <div class="row">
             <div class="col-md-10 col-md-offset-1 text-info">
                 <div style="display:flex; align-items:center; justify-content:center;">
                     <div style="width:50%; min-width:0; text-align:center; overflow-wrap:break-word; word-break:break-word;">
-                        <h4><a href="/ligand/{{ ligand.id }}/info" target="_blank">{{ligand.name|safe}}</a></h4>
+                        <h4><a href="/ligand/{{ ligand.id }}/info" target="_blank">{{ligand.label|safe}}</a></h4>
                     </div>
                     <div style="width:50%; min-width:0; text-align:center;">
                         <div class="ligand-structure-preview" data-smiles="{{ ligand.smiles }}" data-sequence="{{ ligand.sequence }}" data-ligand-type="{{ ligand.ligand_type }}"></div>
@@ -378,7 +378,7 @@ canvas {
                  </div>
                  <div style="display:flex; justify-content:center; gap:10px; padding-top:10px;">
                     <button id="fullscreen_{{ forloop.counter }}" class="btn btn-primary">Full Screen</button>
-                    <a href="download?ligand={{ ligand.name }}&pdb={{ pdbname }}" class="btn btn-primary" target="_blank">Download PDB file</a>
+                    <a href="download?sli={{ ligand.anchor_id }}&pdb={{ pdbname }}" class="btn btn-primary" target="_blank">Download PDB file</a>
                  </div>
             </div>
 {% comment %}
@@ -505,7 +505,8 @@ canvas {
       INTERACTIONS = PAGE_DATA.residues;
 
       var ACTIVE_LIGAND_COLOR = '#E53935';
-      activeLigandId = PAGE_DATA.ligands.length ? PAGE_DATA.ligands[0].id : null;
+      // Keyed by anchor (StructureLigandInteraction id), so a ligand bound at two sites is two entries.
+      activeLigandId = PAGE_DATA.ligands.length ? PAGE_DATA.ligands[0].anchor_id : null;
 
       $(document).ready(function() {
             var table = $('#residues').DataTable({
@@ -591,13 +592,13 @@ canvas {
                 }
             });
 
-            // Positions (by `keyName`, e.g. 'wt_pos' or 'pos') that the given ligand touches.
+            // Positions (by `keyName`, e.g. 'wt_pos' or 'pos') that the given ligand anchor touches.
             // Declared without `var`/`function` so it's a global, callable from the other
             // script block (the 3D structure setup) too.
-            positionsForLigand = function(interactions, keyName, ligandId) {
+            positionsForLigand = function(interactions, keyName, anchorId) {
                 var positions = {};
                 interactions.forEach(function(val) {
-                    if (String(val['ligand_id']) === String(ligandId)) positions[val[keyName]] = true;
+                    if (String(val['anchor_id']) === String(anchorId)) positions[val[keyName]] = true;
                 });
                 return positions;
             };
@@ -684,6 +685,8 @@ canvas {
                   activeLigandId = id;
                   $('.ligand-switch-btn').removeClass('active btn-success').addClass('btn-default');
                   $('.ligand-switch-btn[data-ligand-id="' + id + '"]').addClass('active btn-success').removeClass('btn-default');
+                  $('.ligand-row').removeClass('ligand-row-active');
+                  if ($('.ligand-switch-btn').length) $('.ligand-row[data-ligand-id="' + id + '"]').addClass('ligand-row-active');
                   applyDiagramColoring('snakeplot');
                   applyDiagramColoring('helixbox');
                   filterResidueTableByLigand();
@@ -708,29 +711,27 @@ canvas {
     // 42: 'L42 1x38', 43: 'L43 1x39', 44: 'G44 1x40', 45: 'T45 1x41', 46: 'L46 1x42'}
     var residues_lookup = PAGE_DATA.residues_lookup;
 
+    // Receptor-residue label for an NGL qualified name like "[ALA]123:R.CA", or null when the
+    // atom is on another chain (residues_lookup is keyed by receptor residue number only).
+    function receptorResidueLabel( qualifiedName ){
+        var found = qualifiedName.match(/](\d+):(\w*)/i);
+        if (!found) return null;
+        if (PAGE_DATA.receptor_chain && found[2] !== PAGE_DATA.receptor_chain) return null;
+        return residues_lookup[found[1]] || null;
+    }
+
     function getPickingMessage( d, prefix ){
         var msg;
         if( d.atom ){
             msg = "atom: " +
                 d.atom.qualifiedName() +
                 " (" + d.atom.structure.name + ")";
-            var re = /](\d+):/i;
-            var found = d.atom.qualifiedName().match(re);
-            if (found) {
-                pos = found[1];
-                if (residues_lookup[pos]) msg = residues_lookup[pos];
-                }
+            msg = receptorResidueLabel(d.atom.qualifiedName()) || msg;
         }else if( d.bond ){
             msg = "bond: " +
                 d.bond.atom1.qualifiedName() + " - " + d.bond.atom2.qualifiedName() +
                 " (" + d.bond.structure.name + ")";
-
-            var re = /](\d+):/i;
-            var found = d.bond.atom1.qualifiedName().match(re);
-            if (found) {
-                pos = found[1];
-                if (residues_lookup[pos]) msg = residues_lookup[pos];
-            }
+            msg = receptorResidueLabel(d.bond.atom1.qualifiedName()) || msg;
         }else if( d.volume ){
             msg = "volume: " +
                 d.volume.value.toPrecision( 3 ) +
@@ -777,24 +778,26 @@ canvas {
             // untracked rep can never be hidden by applyActiveLigandToStructure().
             ligandRepsByLigandId = {};
             PAGE_DATA.ligands.forEach(function(ligand) {
-                if (!ligand.pdb_reference) return;
+                if (!ligand.sele) return;
                 try {
-                    var sele = "[" + ligand.pdb_reference + "]";
-                    var ligandPositions = Object.keys(positionsForLigand(INTERACTIONS, 'pos', ligand.id));
+                    var sele = ligand.sele;
+                    var ligandPositions = Object.keys(positionsForLigand(INTERACTIONS, 'pos', ligand.anchor_id));
                     var ligandDisplayRes = ligandPositions.join(' or ');
                     // Set the correct visibility as a creation-time parameter rather than
                     // relying only on the later setVisibility() call below - an expensive
                     // representation like `surface` isn't necessarily done building by the
                     // time addRepresentation() returns, and its own completion can repaint
                     // it visible regardless of an earlier setVisibility(false).
-                    var isActive = String(ligand.id) === String(activeLigandId);
+                    var isActive = String(ligand.anchor_id) === String(activeLigandId);
                     var reps = [];
                     reps.push(o.addRepresentation("ball+stick", { sele: sele, scale: 1, aspectRatio: 1, visible: isActive } ));
                     reps.push(o.addRepresentation("surface", { sele: sele, opacity: 0.4, useWorker: false, visible: isActive } ));
                     if (ligandDisplayRes) {
-                        reps.push(o.addRepresentation( "licorice", { sele: "(" + ligandDisplayRes + ") and sidechainAttached" , scale: 2, aspectRatio: 1, visible: isActive}));
+                        // Residue numbers alone match every chain - restrict to the receptor's.
+                        var residueSele = "(" + ligandDisplayRes + ")" + (PAGE_DATA.receptor_chain ? " and :" + PAGE_DATA.receptor_chain : "");
+                        reps.push(o.addRepresentation( "licorice", { sele: residueSele + " and sidechainAttached" , scale: 2, aspectRatio: 1, visible: isActive}));
                         reps.push(o.addRepresentation( "label", {
-                            sele: "(" + ligandDisplayRes + ") and .CB",
+                            sele: residueSele + " and .CB",
                             color: "#113", scale: 2.0, visible: isActive
                         } ));
                     }
@@ -802,9 +805,9 @@ canvas {
                         sele: sele + " and .C1",
                         color: "#888", scale: 3.0, labelType: "resname", visible: isActive
                     } ));
-                    ligandRepsByLigandId[ligand.id] = reps;
+                    ligandRepsByLigandId[ligand.anchor_id] = reps;
                 } catch (e) {
-                    console.error("Failed to build 3D representations for ligand", ligand.name, e);
+                    console.error("Failed to build 3D representations for ligand", ligand.label, e);
                 }
             });
             o.centerView();
@@ -826,15 +829,17 @@ canvas {
         // stage_full.setSpin( [ 0, 1, 0 ], 0.005 );
         // Same per-ligand loop as above, used for the small per-ligand viewports on the Ligand info tab.
         PAGE_DATA.ligands.forEach(function(ligand, index) {
-            if (!ligand.pdb_reference) return;
+            if (!ligand.sele) return;
             var k = index + 1;
-            var sele = "[" + ligand.pdb_reference + "]";
+            var sele = ligand.sele;
             let stage = new NGL.Stage( "viewport_"+k, { backgroundColor: "white" } );
             ligandStages.push(stage);
-            stage.loadFile( "download?ligand="+ligand.name+"&pdb="+PAGE_DATA.pdbname, { ext: "pdb", defaultRepresentation: false } ).then( function( o ){
+            stage.loadFile( "download?sli="+ligand.anchor_id+"&pdb="+PAGE_DATA.pdbname, { ext: "pdb", defaultRepresentation: false } ).then( function( o ){
 
                 o.addRepresentation( "ball+stick", { sele: sele, scale: 1, aspectRatio: 1 } );
-                o.addRepresentation( "licorice", { sele: "sidechainAttached and not "+sele , scale: 2, aspectRatio: 1});
+                o.addRepresentation( "surface", { sele: sele, opacity: 0.4, useWorker: false } );
+                // sele is "[CODE] and RES:CHAIN", so it needs brackets after "not"
+                o.addRepresentation( "licorice", { sele: "sidechainAttached and not (" + sele + ")", scale: 2, aspectRatio: 1});
                 o.addRepresentation( "label", { sele: ".CB", color: "#113", scale: 2.0} );
 
                 o.centerView();

@@ -1401,12 +1401,9 @@ class ConstructMutations(TemplateView):
     def get_context_data (self, **kwargs):
 
         context = super(ConstructMutations, self).get_context_data(**kwargs)
+        # Only prefetch what is used below; prefetching all construct relations got production workers OOM-killed
         cons = Construct.objects.all().prefetch_related(
-            "crystal","mutations__effects","purification","protein__family__parent__parent__parent", "insertions__insert_type", "modifications", "deletions", "crystallization__chemical_lists",
-            "protein__species","structure__pdb_code","structure__publication__web_link", "contributor")
-
-        #PREPARE DATA
-        proteins = Construct.objects.all().values_list('protein', flat = True)
+            "crystal","mutations__effects","protein__family__parent__parent__parent","protein__species","protein__genes")
 
         #GRAB RESIDUES for mutations
         mutations = []
@@ -1447,11 +1444,8 @@ class ConstructMutations(TemplateView):
             wt = mutation[0].wild_type_amino_acid
             mut = mutation[0].mutated_amino_acid
 
-            mut_type = mutation[0].effects.all().values('slug')
-            mut_types = []
-            for eff in mut_type:
-                mut_types.append(eff['slug'])
-                overall_mut_types.add(eff['slug'])
+            mut_types = [eff.slug for eff in mutation[0].effects.all()]
+            overall_mut_types.update(mut_types)
             mut_type = ",".join(mut_types)
             # # for
             # print(mut_type)
@@ -1469,22 +1463,22 @@ class ConstructMutations(TemplateView):
             p_class = class_names[p_class]
             entry_short = p.entry_short
             receptor_short = p.short
-            if p.genes.count() > 0:
-                if p.genes.first().entrez_weblink:
-                    gene_as_anchor = f'<a href="{p.genes.first().entrez_weblink}" target="_blank">{p.genes.first()}</a>'
-                else:
-                    gene_as_anchor = p.genes.first()
-            else:
-                gene_as_anchor = "-"
-
-            species = p.species.common_name if p.species else "-"
-
-
 
             if entry_name not in rs_lookup:
                 continue
             if pos not in rs_lookup[entry_name]:
                 continue
+
+            genes = list(p.genes.all())
+            if genes:
+                if genes[0].entrez_weblink:
+                    gene_as_anchor = f'<a href="{genes[0].entrez_weblink}" target="_blank">{genes[0]}</a>'
+                else:
+                    gene_as_anchor = genes[0]
+            else:
+                gene_as_anchor = "-"
+
+            species = p.species.common_name if p.species else "-"
             segment = rs_lookup[entry_name][pos].protein_segment.slug
             if rs_lookup[entry_name][pos].generic_number:
                 gn = rs_lookup[entry_name][pos].generic_number.label

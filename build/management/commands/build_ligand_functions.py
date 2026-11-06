@@ -1350,6 +1350,39 @@ def match_id_via_unichem(type, id):
     return results
 
 
+def annotation_ligand_ids(ligand):
+    """The ids get_or_create_ligand matches a parsed ligands.tsv row on.
+
+    A peptide's sequence read from the PDB file is the caller's to add.
+    """
+    ids = {}
+    if ligand['name'] != "pep" and ligand['name'] != "apo":
+        ids["pdb"] = ligand['name']
+        ids["pdbe"] = ligand['name']
+
+    # use pubchem_id
+    if 'pubchemId' in ligand and ligand['pubchemId'] and ligand['pubchemId'] != 'None':
+        # TODO expand list and expand structure annotation
+        if isinstance(ligand['pubchemId'], str) and ligand['pubchemId'].startswith("gtoplig:"):
+            ids["gtoplig"] = ligand['pubchemId'][8:]
+        else:
+            ids["pubchem"] = ligand['pubchemId']
+    elif "pdb" in ids:
+        # match PDB via UniChem
+        uc_entries = match_id_via_unichem("pdb", ids["pdb"])
+        for entry in uc_entries:
+            if entry["type"] not in ids:
+                ids[entry["type"]] = entry["id"]
+    # use smiles, inchikey, sequence from annotation CSV
+    if ligand.get('smiles'):
+        ids['smiles'] = ligand['smiles']
+    if ligand.get('inchikey'):
+        ids['inchikey'] = ligand['inchikey']
+    if ligand.get('sequence'):
+        ids['sequence'] = ligand['sequence']
+    return ids
+
+
 def get_ligand_by_id(type, id, uniprot = None, forced=True, name=None):
     if forced:
         if uniprot is None:
