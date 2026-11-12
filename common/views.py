@@ -1232,7 +1232,8 @@ class AbsSegmentSelection(TemplateView):
         for seg in segments:
             seg.ui_color_class = self._get_segment_color_class(seg)
             seg.ui_row_class = self._get_segment_row_class(seg)
-            seg.display_slug = (seg.slug or '').replace('ECL', 'EL').replace('ICL', 'IL')
+            # Kept as ECL/ICL for now; the site-wide ECL->EL / ICL->IL rename is pending.
+            seg.display_slug = seg.slug or ''
         return segments
 
     def get_context_data(self, **kwargs):
