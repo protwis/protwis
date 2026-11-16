@@ -2451,7 +2451,7 @@ function data_visualization(data, category_data, location, Layout_dict, data_sty
     const _barsAtBottom = Layout_dict && Layout_dict.legend_position === 'Bottom';
     // Compact bar dimensions (similar visual weight to the tree's legend bars)
     const _LW = 120; const _BH = 12; const _SB = 15;
-    const _XO = 25;  const _TO = 18; const _DF = Math.min(data_fontsize_variable, 11);
+    const _XO = 25;  const _TO = _BH + 12; const _DF = Math.min(data_fontsize_variable, 11);
     // When bars go at bottom, place them after the last drawn row
     const _barBaseY = _barsAtBottom ? (yOffset_max + 22) : 10;
 

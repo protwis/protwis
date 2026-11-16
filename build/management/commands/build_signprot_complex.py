@@ -49,7 +49,7 @@ class Command(BaseCommand):
             structure = Structure.objects.get(pdb_code__index=signprot['pdb'])
             signprot_complex, created = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=signprot['alpha_uniprot']), 
                                                                               structure=structure,
-                                                                              alpha=signprot['alpha'], beta_chain=signprot['beta'], gamma_chain=signprot['gamma'],
+                                                                              alpha=signprot['alpha'] or None, beta_chain=signprot['beta'], gamma_chain=signprot['gamma'],
                                                                               beta_protein=Protein.objects.get(entry_name=signprot['beta_uniprot']), 
                                                                               gamma_protein=Protein.objects.get(entry_name=signprot['gamma_uniprot']))
             structure.signprot_complex = signprot_complex
@@ -94,11 +94,11 @@ class Command(BaseCommand):
                     alpha_backbone = Protein.objects.get(entry_name=alphab) if alphab and alphab != 'unknown' else None
                     signprot_complex, _ = SignprotComplex.objects.get_or_create(protein=alpha,
                                                                                       structure=structure,
-                                                                                      alpha=data['g_protein']['alpha_chain'], beta_chain=b_chain, gamma_chain=g_chain,
+                                                                                      alpha=data['g_protein']['alpha_chain'] or None, beta_chain=b_chain, gamma_chain=g_chain,
                                                                                       beta_protein=b_protein, gamma_protein=g_protein,
                                                                                       alpha_backbone=alpha_backbone)
                 if 'arrestin' in data:
                     signprot_complex, _ = SignprotComplex.objects.get_or_create(protein=Protein.objects.get(entry_name=data['arrestin']['protein']), structure=structure,
-                                                                                      alpha=data['arrestin']['chain'])
+                                                                                      alpha=data['arrestin']['chain'] or None)
                 structure.signprot_complex = signprot_complex
                 structure.save()

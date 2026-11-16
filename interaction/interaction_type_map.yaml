@@ -1,0 +1,187 @@
+# interaction_type_map.yaml
+#
+# Maps a Schrodinger product row (feature_family, direction) to the protwis
+# ResidueFragmentInteractionType slug it is stored under. The consumer
+# (interaction/schrodinger_import.py, load_type_map and resolve_slug) reads only
+# family, direction and slug of each rule; rationale and the rest are for the
+# reader.
+#
+# -----------------------------------------------------------------------------
+# THIS FILE EXISTS TWICE AND THE TWO COPIES MUST STAY BYTE-IDENTICAL. One copy
+# is read by the GPCRdb import (protwis, interaction/schrodinger_import.py); the
+# other, in the Schrodinger producer, only by that producer's tests. Each
+# repository's tests pin the same sha256 of the file. A rule missing from the
+# import's copy fails every structure holding such a receptor row, and stops
+# build_all and build_all_interactions in their dry run. So a change here is a
+# change to both files, and to both pinned digests, at once.
+#
+# -----------------------------------------------------------------------------
+# DESIGN: the target slug is fully determined by (feature_family, direction).
+# The specific `feature` name (Hydroxyl vs Carbonyl vs Amine ...) is chemical
+# detail that does not change the slug, so the map is keyed on
+# (feature_family, direction), and every pharmacophore feature routes through
+# its family.
+#
+# Feature names are the vendor's spelling and are kept verbatim
+# (QuarternaryAmine, 2Aminopirydine, Metoxypirydine); never "correct" them.
+#
+# Two conventions:
+#   * H-bond direction is reversed to the protwis protein perspective: protwis
+#     polar_donor_protein / polar_acceptor_protein name the PROTEIN residue's
+#     role (interaction/views.py, analyze_interactions), while the product's
+#     family names the LIGAND's role.
+#   * Salt bridges -> polar_double_*_protein (both partners charged; the pos/neg
+#     suffix follows the RESIDUE charge, as in analyze_interactions).
+# -----------------------------------------------------------------------------
+
+version: 0
+
+rules:
+  # ---- Hydrogen bonds (direction reversed: family = ligand role) -------------
+  - family: Donor
+    direction: ligand-donor
+    slug: polar_acceptor_protein
+    rationale: >-
+      Ligand donates H => protein residue is the acceptor. protwis D/A names the
+      residue role (interaction/views.py, analyze_interactions).
+  - family: Acceptor
+    direction: ligand-acceptor
+    slug: polar_donor_protein
+    rationale: >-
+      Ligand accepts H => protein residue is the donor.
+
+  # ---- Salt bridges (double charge; suffix = residue charge sign) ------------
+  - family: PosCharge
+    direction: pos-neg
+    slug: polar_double_neg_protein
+    rationale: >-
+      Salt: ligand cation + protein anion (e.g. Asp 3.32). Both charged =>
+      double; the residue is negative.
+  - family: NegCharge
+    direction: neg-pos
+    slug: polar_double_pos_protein
+    rationale: >-
+      Salt: ligand anion + protein cation (e.g. Arg). Both charged => double;
+      the residue is positive.
+
+  # ---- Pi-cation (protwis only ever writes aro_ion_protein) ------------------
+  - family: PiCat
+    direction: ligand-cation
+    slug: aro_ion_protein
+    rationale: >-
+      Pi-cation: ligand cation vs protein aromatic ring. protwis writes
+      aro_ion_protein for both directions; aro_ion_ligand is never written.
+  - family: PiCat
+    direction: receptor-cation
+    slug: aro_ion_protein
+    rationale: >-
+      Pi-cation, other direction (protein cation vs ligand ring). Still
+      aro_ion_protein.
+
+  # ---- Aromatic stacking (direction distinguishes geometry) ------------------
+  - family: Aromatic
+    direction: edge-to-face
+    slug: aro_ef_protein
+    rationale: >-
+      Edge-to-face aromatic stacking; protwis slug direction = protein.
+  - family: Aromatic
+    direction: face-to-face
+    slug: aro_ff
+    rationale: >-
+      Face-to-face aromatic stacking; protwis slug direction = none.
+
+  # ---- Halogen bond, water bridge, metal coordination ------------------------
+  # The producer emits the Schrodinger Suite's own SHORTFORM strings ('XBond',
+  # 'Wat-HBond', 'Metal') unchanged. direction is '' because these contact
+  # types carry no donor/acceptor or pos/neg axis.
+  - family: XBond
+    direction: ''
+    slug: halogen_protein
+    rationale: >-
+      Halogen contact: a ligand halogen within the producer's distance limit
+      of a receptor polar atom (backbone C=O, Asn/Gln O, His N, ...), with
+      loose angle limits, so these are contacts rather than proven halogen
+      bonds, and the type is named "halogen contact". The Suite's SHORTFORM
+      'XBond' is kept verbatim rather than renamed.
+  - family: Wat-HBond
+    direction: ''
+    slug: water_bridge_protein
+    rationale: >-
+      Water-mediated H-bond: ligand -> water -> receptor, two H-bonds in a
+      chain; SHORTFORM 'Wat-HBond' is the Suite's. The import does not write
+      this family (schrodinger_import.py, EXCLUDED_FAMILIES): the bridging water
+      is not recorded in the product, so no row of it can be checked.
+  - family: Metal
+    direction: ''
+    slug: metal_coordination_protein
+    rationale: >-
+      Metal coordination: ligand -> metal cofactor -> receptor coordinating
+      residue (His/Asp/Cys/Glu).
+
+  # ---- Hydrophobic -------------------------------------------------------------
+  # The Suite emits its SHORTFORM 'HPhob' verbatim, and the producer builds the
+  # contact with no direction, so direction arrives as ''.
+  - family: HPhob
+    direction: ''
+    slug: hyd
+    rationale: >-
+      Hydrophobic contact: apolar ligand atom against an apolar receptor atom.
+      Routes to the existing protwis slug `hyd`; the criterion is the
+      producer's, the consumer only routes.
+
+  # ---- Covalent bond -----------------------------------------------------------
+  # Not a vendor family: the Suite has no function that reports a covalent
+  # bond, so the producer writes the rows itself, one per ligand-receptor bond,
+  # with direction ''. The slug is seeded by interaction migration 0009, and
+  # its type `covalent` is not `hidden`, so the rows are shown on the pages.
+  - family: Covalent
+    direction: ''
+    slug: covalent
+    rationale: >-
+      Covalent bond: a bond of order >= 1 from a ligand atom to a receptor
+      atom. The row says a bond exists, not its order.
+
+  # ---- Contact labels ----------------------------------------------------------
+  # LABELS, not interactions: each says a residue lines the ligand, one row per
+  # (ligand instance, residue). Not vendor families: the producer writes the
+  # rows itself, with direction ''. Both route to existing GPCRdb slugs; the
+  # seed migration creates them where missing.
+  - family: VdW
+    direction: ''
+    slug: Van der Waals
+    rationale: >-
+      Van der Waals contact label: a close heavy-atom contact; the criterion
+      is the producer's. By default the producer writes it only on a residue
+      with no imported interaction for the same ligand instance; the
+      Accessible label does not count.
+      Existing slug, type waals, shown on the pages.
+  - family: Accessible
+    direction: ''
+    slug: acc
+    rationale: >-
+      Accessible label, GPCRdb's own rule: a heavy atom of the residue other
+      than the backbone C, O and N (CA counts) strictly within 5 A of a heavy
+      ligand atom. Existing slug, type hidden.
+
+# -----------------------------------------------------------------------------
+# Not handled by this map.
+# -----------------------------------------------------------------------------
+deferred:
+  polar_backbone:
+    note: >-
+      Backbone H-bonds need the PROTEIN atom identity (backbone N/O), which is
+      not in the (family, direction) key. The consumer promotes an H-bond slug
+      to polar_backbone when the receptor atom is backbone N or O
+      (schrodinger_import.py, apply_backbone_override).
+  dedup:
+    note: >-
+      One ligand atom can produce several rows (e.g. Donor + PosCharge +
+      PiCat). This map translates one row to one slug; it does not merge rows.
+      The import keeps one record per residue and slug (schrodinger_import.py,
+      plan_rows); unlike remove_hyd in the legacy calculation
+      (interaction/views.py), it keeps a hydrophobic row next to a polar or
+      aromatic one on the same residue.
+  aro_fe_protein:
+    note: >-
+      The protwis face-to-edge slug has no Schrodinger source: the Suite's
+      pi-pi contacts are only face-to-face or edge-to-face. Expected unmapped.

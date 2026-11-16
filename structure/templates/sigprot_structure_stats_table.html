@@ -38,7 +38,7 @@
                 <td class="spacer_cell"></td>
             </tr>
             <tr>
-                <td class="row_title">Receptor only</td>
+                <td class="row_title">{% if page == 'gprotein' %}G protein only{% elif page == 'arrestin' %}Arrestin only{% else %}Receptor only{% endif %}</td>
                 {% for effector_name, effector_count in source_data.receptor_only.all_classes.by_effector.items %}
                 <td align="center" style="vertical-align:middle !important">{{ effector_count }}</td>
                 {% endfor %}

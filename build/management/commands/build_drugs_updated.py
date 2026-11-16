@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.db import IntegrityError
 from django.utils.text import slugify
-from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, resolve_ligand_ambiguity
+from build.management.commands.build_ligand_functions import get_ligand_by_id, match_id_via_unichem, get_or_create_ligand, is_float, resolve_ligand_ambiguity, _inchikeys_compatible, _raw_stereo_conflict, _child_key
 
 from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, TissueExpression, CancerType, CancerExpression, Tissues, ExpressionValue
@@ -375,6 +375,36 @@ class Command(BaseCommand):
             #         print(f'The Drugs {pmid} publication was not added to the data base'))
 
     @staticmethod
+    def clean_pubchem_cid(value):
+        """
+        pandas reads a numeric-with-NaNs column as float64, so a CID like 2678
+        comes through as the float 2678.0 and str()s to "2678.0". Collapse it
+        back to "2678" here; semicolon-delimited multi-CID strings aren't
+        valid floats so they fall through unchanged.
+        """
+        try:
+            return str(int(float(value)))
+        except (ValueError, TypeError):
+            return str(value)
+
+    @staticmethod
+    def _match_by_ids(mapper, inchikey):
+        """Return the single ligand carrying one of the row's IDs, but only if it is
+        stereo-compatible with the row's InChIKey; otherwise None (→ get_or_create_ligand)."""
+        for key, values in mapper.items():
+            for code in values:
+                if code == 'nan':
+                    continue
+                hits = LigandID.objects.filter(index=code, web_resource__slug=key)
+                if len(hits) == 1:
+                    lig = hits[0].ligand
+                    if inchikey == 'NOT AVAILABLE' or (
+                            _inchikeys_compatible(inchikey, _child_key(lig))
+                            and not _raw_stereo_conflict(inchikey, lig.inchikey)):
+                        return lig
+        return None
+
+    @staticmethod
     def fetch_ligand(row):
         """
         fetch ligands with Ligand model
@@ -382,7 +412,7 @@ class Command(BaseCommand):
         """
         #will perform several checks
         mapper = {'chembl_ligand': str(row['ChEMBLID']).split(';'),
-                  'pubchem': str(row['PubChemCID']).split(';'),
+                  'pubchem': Command.clean_pubchem_cid(row['PubChemCID']).split(';'),
                   'drugbank': str(row['DrugBankID']).split(';')}
         check = None
         #Check for match of Inchikey.
@@ -404,17 +434,9 @@ class Command(BaseCommand):
                     return resolve_ligand_ambiguity(
                         Ligand.objects.filter(inchikey=inchi, parent__isnull=False), row['Name'], inchi)
                 except Ligand.DoesNotExist:
-                    for key, values in mapper.items():
-                        for code in values:
-                            if code != 'nan':
-                                try:
-                                    check = LigandID.objects.filter(index=code, web_resource__slug=key)
-                                    if len(check) == 1:
-                                        return check[0].ligand
-                                    else:
-                                        check = None
-                                except LigandID.DoesNotExist:
-                                    continue
+                    check = Command._match_by_ids(mapper, inchi)
+                    if check is not None:
+                        return check
         else:
             try:
                 check = Ligand.objects.get(inchikey=inchi_list[0], parent__isnull=False)
@@ -423,17 +445,9 @@ class Command(BaseCommand):
                 return resolve_ligand_ambiguity(
                     Ligand.objects.filter(inchikey=inchi_list[0], parent__isnull=False), row['Name'], inchi_list[0])
             except Ligand.DoesNotExist:
-                for key, values in mapper.items():
-                    for code in values:
-                        if code != 'nan':
-                            try:
-                                check = LigandID.objects.filter(index=code, web_resource__slug=key)
-                                if len(check) == 1:
-                                    return check[0].ligand
-                                else:
-                                    check = None
-                            except LigandID.DoesNotExist:
-                                continue
+                check = Command._match_by_ids(mapper, inchi_list[0])
+                if check is not None:
+                    return check
 
         if check == None:
             # perform a check: if all the mapper items are NaN
@@ -493,7 +507,7 @@ class Command(BaseCommand):
     @staticmethod
     def add_drug_references(ligand, row):
         mapper = {'chembl_ligand': str(row['ChEMBLID']).split(';'),
-                  'pubchem': str(row['PubChemCID']).split(';'),
+                  'pubchem': Command.clean_pubchem_cid(row['PubChemCID']).split(';'),
                   'drugbank': str(row['DrugBankID']).split(';')}
         for key, values in mapper.items():
             for code in values:

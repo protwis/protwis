@@ -390,9 +390,9 @@ def SelectionAutocomplete(request):
 
             cache_key = 'SelectionAutocompleteLigandsFields'
             if not(cache.has_key(cache_key)):
-                q = LigandID.objects.distinct('web_resource_id').values('web_resource_id','web_resource__slug','web_resource__name')
+                lid_qs = LigandID.objects.distinct('web_resource_id').values('web_resource_id','web_resource__slug','web_resource__name')
                 web_resource_slug_2_id = {}
-                for lid in q:
+                for lid in lid_qs:
                     web_resource_slug_2_id[lid['web_resource__slug']] = lid['web_resource_id']
                 cache.set(cache_key, web_resource_slug_2_id, 60*60*24*7)
             else:
@@ -402,9 +402,9 @@ def SelectionAutocomplete(request):
             for field in field_list:
                 if field == 'name':
                     if qsl is None:
-                        qsl = Q(name__icontains=q)
+                        qsl = Q(name__icontains=q, parent__isnull=False)
                     else:
-                        qsl = qsl | Q(name__icontains=q)
+                        qsl = qsl | Q(name__icontains=q, parent__isnull=False)
                 elif field == 'gpcrdb_id':
                     if qsl is None:
                         qsl = Q(id=q)
@@ -479,7 +479,7 @@ def SelectionAutocomplete(request):
             for p in ps:
                 p_json = {}
                 p_json['id'] = p.id
-                p_json['label'] = p.name
+                p_json['label'] = p.name + " [" + str(p.gpcrdb_id) + "]"
                 p_json['type'] = 'ligand'
                 p_json['category'] = gpcrdb_category_name
                 results.append(p_json)

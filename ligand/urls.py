@@ -48,8 +48,8 @@ urlpatterns = [
     url(r'^subtype_coverage', cache_page(3600*24*7)(views.LigandStatistics.as_view(page='subtype')), name='ligand_statistics'),
     # url(r'^subtype_coverage', views.LigandStatistics.as_view(page='subtype'), name='ligand_statistics'),
     path('subtype_bias_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='BiasRankOrderSubtype'), name='bias_subtype_ro_selection'),
-    path('subtype_bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True), name='biased_rank_order'),
-    path('subtype_bias_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, balanced=True), name='biased_rank_order'),
+    path('subtype_bias_rankorder', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias',subtype=True), name='biased_rank_order'),
+    path('subtype_bias_rankorder_path_bias', views.BiasedSignallingOnTheFlyCalculation.as_view(label='bias', subtype=True, balanced=True), name='biased_rank_order'),
     path('userbiasedsubtypes_bias_rank_order', views.BiasedSignallingOnTheFlyCalculation.as_view(subtype=True, user=True), name='biased_rank_order'),
 
     path('subtype_emax_rankorder_selection', views.BiasedSignallingSelection.as_view(subtype=True, way='EmaxRankOrderSubtype'), name='ema_subtype_ro_selection'),
@@ -91,6 +91,7 @@ urlpatterns = [
     path('pathwaypreference/',views.CachedOTFPathwayPrefBrowser, name='bias_browser-list'),
     path('endogenousbrowser/', cache_page(3600*24*7)(views.endogenous_redirect), name='endogenous_browser'),
     path('physiological_ligands/', cache_page(3600*24*7)(views.PhysiologicalLigands.as_view()), name='physiological_ligands'),
+    path('peptide_analog_bioactivities/', views.PeptideAnalogBioactivities.as_view(), name='peptide_analog_bioactivities'),
     #User selected calculations
     #Biased Family
     path('userselectionbiased', views.UserBiased.as_view(way='Browser'), name='bias_browser-list'),

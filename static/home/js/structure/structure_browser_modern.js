@@ -17,7 +17,8 @@
   let repFilterOn = false;
 
   // ===== 1) RENDERING HELPERS (cell render/format) ===========================
-  function expand1LineRender(d, type) {
+  // opts.itemClass: wrap each item in <span class="..."> (e.g. per-item hover underline)
+  function expand1LineRender(d, type, { itemClass = null } = {}) {
     const decode = (s) => {
       const div = document.createElement('div');
       div.innerHTML = s || '';
@@ -44,10 +45,11 @@
     if (type && type !== 'display') return items.join('\n');
 
     if (!items.length) return '-';
-    const first = items[0];
+    const wrap  = (s) => itemClass ? `<span class="${itemClass}">${s}</span>` : s;
+    const first = wrap(items[0]);
     const more  = items.length - 1;
     const hint  = more > 0 ? ` <span class="muted">(+${more} more)</span>` : '';
-    const expanded = items.join('<br>');
+    const expanded = items.map(wrap).join('<br>');
 
     return (
       '<span class="expand_1line">' +
@@ -271,7 +273,7 @@
   {
     data: "auxiliary_molecules",
     name: "Name",
-    render: (d, t) => expand1LineRender(d, t),
+    render: (d, t) => expand1LineRender(d, t, { itemClass: "sb-list-item" }),
   },
   {
     data: "auxiliary_molecule_type",
@@ -618,7 +620,7 @@
     column_filters = column_filters.concat(CreateColumnFilters(dt, 15, 2,"Range-float-vertical"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 17, 3,"Multi-select-exact"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 20, 1,"Range-float-vertical"));
-    column_filters = column_filters.concat(CreateColumnFilters(dt, 21,10,"Multi-select-exact-filter"));
+    column_filters = column_filters.concat(CreateColumnFilters(dt, 21,10,"Multi-select-exact-filter-lines"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 31, 2,"Multi-select-exact"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 33, 2,"Multi-select-unspecific"));
     column_filters = column_filters.concat(CreateColumnFilters(dt, 35, 1,"Range-select-vertical"));

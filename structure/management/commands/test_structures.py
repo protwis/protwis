@@ -20,6 +20,8 @@ class Command(BaseCommand):
                 sbc.pdbs = [p for p in sbc.pdbs if p in pdb_filter]
             sbc.check_structures()
             structs = Structure.objects.filter(structure_type__origin='experiment')
+            if pdb_filter:
+                structs = structs.filter(pdb_code__index__in=pdb_filter)
             sbc.check_duplicate_residues(structs)
             for s in structs:
                 sbc.check_segment_ends(s)

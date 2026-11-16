@@ -111,12 +111,15 @@ class SequenceSignature:
         self.aln_pos.load_segments(segments)
         self.aln_neg.load_segments(segments)
 
-        # SM: "Borrowing" the selected segments from Alignment object to avoid extracting Selection object
-        # SM: segments are for now the same for both positive and negative set
-        self.selection_segments = self.aln_pos.segments
-
         self.aln_pos.build_alignment()
         self.aln_neg.build_alignment()
+
+        # SM: "Borrowing" the selected segments from Alignment object to avoid extracting Selection object
+        # SM: segments are for now the same for both positive and negative set
+        # NOTE: this must be captured *after* build_alignment(), since build_alignment() may
+        # replace self.segments with a new dict (e.g. when restoring from cache), which would
+        # otherwise leave selection_segments pointing at the stale, pre-alignment segment data.
+        self.selection_segments = self.aln_pos.segments
 
         for x in self.aln_neg.segments.keys():
             if x not in self.aln_pos.segments.keys():

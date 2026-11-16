@@ -23,7 +23,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            timeout: 120000,  // 2 minutes
+            timeout: 300000,  // 5 minutes
             url: $form.attr('action'),
             type: $form.attr('method'),
             data: new FormData(this),

@@ -14,7 +14,14 @@ $(document).ready(function() {
 
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
-        resetButtonState();
+        // A bfcache restore replays the exact DOM/selection state from whenever this page was
+        // last rendered, with no request made and no chance to re-sync #selection-segments/
+        // targets against what the server session actually holds now (it may have changed via
+        // a different tab, a completed flow elsewhere, or simply time passing). Force a real
+        // reload instead of just clearing the spinner, so the page always reflects current
+        // server state on back-navigation.
+        location.reload();
+        return;
     }
 });
 

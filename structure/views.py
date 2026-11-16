@@ -57,8 +57,11 @@ import zipfile
 import json
 import statistics
 import re
+import html
 from math import atan2, cos, sin, pi
 import traceback
+from urllib.parse import quote
+from django.utils.html import strip_tags
 
 from copy import deepcopy
 from io import StringIO, BytesIO
@@ -1123,10 +1126,10 @@ def ServeComplexModDiagram(request, modelname):
     if model.exists():
         model=model.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if model.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     response = HttpResponse(model.pdb_data.pdb, content_type='text/plain')
     return response
@@ -1541,10 +1544,10 @@ def ServePdbDiagram(request, pdbname):
     if structure.exists():
         structure=structure.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if structure.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     response = HttpResponse(structure.pdb_data.pdb, content_type='text/plain')
     return response
@@ -1555,10 +1558,10 @@ def ServeUprightPdbDiagram(request, pdbname):
     if structure.exists():
         structure = structure.get()
     else:
-         quit() #quit!
+        return HttpResponseNotFound("Structure not found")
 
     if structure.pdb_data is None:
-        quit()
+        return HttpResponseNotFound("No PDB data for this structure")
 
     sv = StructureVectors.objects.filter(structure=structure)
     struct = translation = center_axis = ""
@@ -1614,7 +1617,14 @@ def ServeUprightPdbDiagram(request, pdbname):
     return HttpResponse(out_stream.getvalue(), content_type='chemical/x-pdb')
 
 def ServePdbLigandDiagram(request,pdbname,ligand):
-    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+    pairs = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True)
+    # A ligand can have several anchors (one per binding copy); ?chain_res=R:401 picks one.
+    chain_res = request.GET.get('chain_res')
+    if chain_res:
+        pairs = pairs.filter(chain_res=chain_res)
+    pair = pairs.order_by('id').first()
+    if pair is None:
+        return HttpResponseNotFound("No ligand complex for this structure")
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
@@ -1623,13 +1633,90 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
     if structure.exists():
         structure = structure.get()
         if structure.pdb_data is None:
-            quit()
+            return HttpResponseNotFound("No PDB data for this structure")
     else:
-        quit()
+        return HttpResponseNotFound("Structure not found")
+
+    # Resolve the requested ligand either by its 2-3 letter PDB chemical-component
+    # code, or by its GPCRdb ligand id (needed for peptide/protein ligands, whose
+    # pdb_reference is just the literal 'pep' and can be ambiguous per structure -
+    # but any ligand can be looked up this way).
+    interactions = list(StructureLigandInteraction.objects.filter(structure=structure, pdb_reference=ligname.upper()))
+    if not interactions and len(ligname) == 3:
+        # Extended (4-5 char) chemical component codes get truncated to 3 chars
+        # when a .cif gets converted to the legacy fixed-width .pdb format, so the
+        # residue name actually present in pdb_data.pdb no longer matches the full
+        # pdb_reference recorded in the annotation.
+        candidates = StructureLigandInteraction.objects.filter(structure=structure, pdb_reference__istartswith=ligname)
+        interactions = [i for i in candidates if i.pdb_reference and len(i.pdb_reference) > 3]
+    if not interactions and ligname.isdigit():
+        interactions = list(StructureLigandInteraction.objects.filter(structure=structure, ligand__gpcrdb_id=int(ligname)))
+    if not interactions:
+        return HttpResponseNotFound("Ligand not found in this structure")
+
+    # A ligand can have several anchors (one per binding copy); all are kept unless
+    # ?chain_res=R:401 and/or ?role=agonist (role name or slug) pick some.
+    chain_res = request.GET.get('chain_res')
+    if chain_res:
+        interactions = [i for i in interactions if (i.chain_res or '').replace(' ', '') == chain_res.replace(' ', '')]
+    role = request.GET.get('role')
+    if role:
+        interactions = [i for i in interactions if i.ligand_role and role.lower() in (i.ligand_role.name.lower(), i.ligand_role.slug)]
+    if not interactions:
+        return HttpResponseNotFound("No anchor of this ligand matches the chain_res/role filter")
+
+    lig_code = interactions[0].pdb_reference.upper()
+    lig_code_variants = {lig_code}
+    if len(lig_code) > 3:
+        lig_code_variants.add(lig_code[:3])
+    no_coordinates_anywhere = all(not i.chain_res for i in interactions)
+
+    # Peptide anchors are 'pep' with a bare chain as chain_res; some of their Ligand
+    # records are typed small-molecule, so the anchor decides, not the ligand type.
+    if lig_code == 'PEP' or interactions[0].ligand.ligand_type.slug in ('peptide', 'protein'):
+        # Peptide/protein ligands are whole polymer chains (plain ATOM records,
+        # no HETATM), so they're extracted by chain rather than by residue name.
+        # Always fetched live from the structure - StructureLigandInteraction.pdb_file
+        # only contains the residues that interact with the ligand, not the full
+        # receptor chain or the full peptide, so it can't be used here.
+        chains_to_keep = []
+        for interaction in interactions:
+            if interaction.chain_res:
+                chains_to_keep += [c.strip() for c in interaction.chain_res.split(',') if c.strip()]
+        cleaned = structure.get_cleaned_pdb(chains_to_keep=chains_to_keep) if chains_to_keep else ''
+        found = any(
+            (l.startswith('ATOM') or l.startswith('HET')) and len(l) > 21 and l[21] in chains_to_keep
+            for l in cleaned.split('\n')
+        )
+    else:
+        residues_to_keep = []
+        for interaction in interactions:
+            if interaction.chain_res:
+                for part in interaction.chain_res.split(','):
+                    part = part.strip()
+                    if ':' in part:
+                        chain, resnum = part.split(':', 1)
+                        try:
+                            residues_to_keep.append((chain.strip(), int(resnum.strip())))
+                        except ValueError:
+                            pass
+
+        if residues_to_keep:
+            cleaned = structure.get_cleaned_pdb(residues_to_keep=residues_to_keep)
+        else:
+            # No usable chain_res - fall back to matching by ligand code on the
+            # preferred chain, same as before this session.
+            cleaned = structure.get_cleaned_pdb(ligands_to_keep=list(lig_code_variants))
+        found = any(l.startswith('HET') and l[17:20].strip() in lig_code_variants for l in cleaned.split('\n'))
+
+    if not found:
+        if no_coordinates_anywhere:
+            return HttpResponseNotFound("Ligand is annotated for this structure but has no resolved atomic coordinates")
+        return HttpResponseNotFound("Ligand not found in this structure")
 
     # Obtain and save cleaned PDB
     parser = PDBParser(QUIET = True)
-    filtered_pdb = StringIO(structure.get_cleaned_pdb(ligands_to_keep=ligname.upper()))
+    filtered_pdb = StringIO(cleaned)
     pdb_out = PDBIO()
     pdb_out.set_structure(parser.get_structure(structure.pdb_code.index, filtered_pdb))
 
@@ -1640,11 +1727,15 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
 
 class NotDisordered(Select):
     def accept_atom(self, atom):
-        if not atom.is_disordered() or atom.get_altloc() == 'A':
+        if not atom.is_disordered():
             atom.set_altloc(' ')
             return True
-        else:
-            return False
+        disordered_atom = atom.get_parent()[atom.get_name()]
+        first_altloc = disordered_atom.disordered_get_id_list()[0]  # already sorted alphabetically
+        if atom.get_altloc() == first_altloc:
+            atom.set_altloc(' ')
+            return True
+        return False
 
     def accept_residue(self, residue):
         if residue.is_disordered():
@@ -2108,161 +2199,126 @@ class StructureStatistics(TemplateView):
                 context['GPCRome_data'] = json.dumps(updated_data)
 
             else:
+                # Each wheel is built twice -- all species (the page default) and human only -- and
+                # the page's species toggle just swaps between them client-side.
+                ortholog_lookup = self.get_human_ortholog_lookup()
+
                 #Adjust call to exclude olfactory
                 all_proteins = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False, family_id__slug__startswith='0').exclude(
                                                     family_id__slug__startswith='007'
                                                 ).exclude(
                                                     family_id__slug__startswith='008'
-                                                )
-                all_structs = Structure.objects.filter(structure_type__origin='experiment').prefetch_related('protein_conformation__protein__family')
-                circle_data = all_structs.values_list(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name").order_by(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name").distinct(
-                              "state_id__slug", "protein_conformation__protein__parent__entry_name")
+                                                ).values_list('entry_name', flat=True)
+                coverage_rows = Structure.objects.filter(structure_type__origin='experiment').values_list(
+                                    'state__slug',
+                                    'protein_conformation__protein__parent__entry_name',
+                                    'protein_conformation__protein__parent__species_id').distinct()
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel = self.build_coverage_wheel(coverage_rows, all_proteins, all_species, ortholog_lookup)
+                    context['GPCRome_data' + suffix] = json.dumps(wheel)
 
-                result_dict = {}
-                for prot in all_proteins:
-                    key = prot.entry_name
-                    # Initialize the key in result_dict if not already present
-                    if key not in result_dict:
-                        result_dict[key] = {'states': set(), 'status': 'empty'}
-
-                for item in circle_data:
-                    key = item[1]
-                    value = item[0]
-
-                    # Initialize the key in result_dict if not already present
-                    if key in result_dict:
-                        # Add the value to the states set to avoid duplicates
-                        result_dict[key]['states'].add(value)
-
-                        # Determine the status based on the current set of states
-                        if len(result_dict[key]['states']) == 1:
-                            if 'active' in result_dict[key]['states']:
-                                result_dict[key]['status'] = 'Active'
-                            elif 'inactive' in result_dict[key]['states']:
-                                result_dict[key]['status'] = 'Inactive'
-                        elif 'active' in result_dict[key]['states'] and 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Both'
-                        elif 'active' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Active'
-                        elif 'inactive' in result_dict[key]['states']:
-                            result_dict[key]['status'] = 'Inactive'
-
-                # Optionally, reduce to key-status dictionary
-                result_dict = {k: v['status'] for k, v in result_dict.items()}
-
-                # Mapping for Value2
-                status_color_map = {
-                    'Both': 'blue',
-                    'Inactive': 'red',
-                    'Active': 'forestgreen'
-                }
-
-                # Creating the new dictionary
-                results_updated_dict = {
-                    key: {
-                        'Value1': value,
-                        'Value2': status_color_map.get(value, '#FFFFFF')  # Default to black if key not found
-                    }
-                    for key, value in result_dict.items()
-                }
-
-                gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
-                updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results_updated_dict)
-
-                context['GPCRome_data'] = json.dumps(updated_data)
-
-                # fetech the Complexes data
-                complexes_count = StructureLigandInteraction.objects \
-                    .filter(annotated=True, 
+                # fetch the Complexes data
+                complexes_rows = StructureLigandInteraction.objects \
+                    .filter(annotated=True,
                             structure__structure_type__origin='experiment') \
-                    .values('structure_id__protein_conformation_id__protein__parent__entry_name') \
+                    .values_list('structure__protein_conformation__protein__parent__entry_name',
+                                 'structure__protein_conformation__protein__parent__species_id') \
                     .annotate(c=Count('id', distinct=True))
-                complexes_dict = {}
-
-                complexes_list = list(complexes_count)
-
-                complexes_dict = {}
-                for prot in all_proteins:
-                    key = prot.entry_name
-                    # Initialize the key in result_dict if not already present
-                    if key not in complexes_dict:
-                        complexes_dict[key] = 0
-
-                for a in complexes_list:
-                    complexes_dict[a['structure_id__protein_conformation_id__protein__parent__entry_name']] = a['c']
-
-                # Creating the new dictionary -- receptors with 0 complexes are left out entirely
-                # (rather than sent as Value1: 0) so they render as blank/uncolored wedges instead
-                # of being pulled into the numeric color scale, and so they don't skew its min/max.
-                complexes_updated_dict = {
-                    key: {
-                        'Value1': value,
-                    }
-                    for key, value in complexes_dict.items()
-                    if value > 0
-                }
-
-                gpcr_data_complexes = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
-                complexes_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_complexes["Data"], complexes_updated_dict)
-
-                context['GPCRome_data_complexes'] = json.dumps(complexes_updated_data)
-
-                complexes_nonzero_values = [v for v in complexes_dict.values() if v > 0]
-                complexes_min = min(complexes_nonzero_values) if complexes_nonzero_values else 0
-                complexes_max = max(complexes_nonzero_values) if complexes_nonzero_values else 0
-                context['GPCRome_complexes_stats'] = json.dumps({
-                    'min': complexes_min,
-                    'max': complexes_max,
-                    'avg': (complexes_min + complexes_max) / 2,
-                })
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel, stats = self.build_count_wheel(complexes_rows, all_proteins, all_species, ortholog_lookup, "Classic")
+                    context['GPCRome_data_complexes' + suffix] = json.dumps(wheel)
+                    context['GPCRome_complexes_stats' + suffix] = json.dumps(stats)
 
                 ### TESTING GPCROME FOR ODORANTS
                 all_olfactory = Protein.objects.filter(species_id=1, parent_id__isnull=True, accession__isnull=False
-                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008'))
-                olfactory_struct = Structure.objects.filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')).values(
-                                                        'protein_conformation__protein__parent__entry_name'
-                                                    ).annotate(
-                                                        c=Count('id', distinct=True)
-                                                    )
-
-                olfactory_struct_dict = {}
-                for prot in all_olfactory:
-                    olfactory_struct_dict[prot.entry_name] = 0
-
-                for a in olfactory_struct:
-                    olfactory_struct_dict[a['protein_conformation__protein__parent__entry_name']] = a['c']
-
-
-                if None in olfactory_struct_dict:
-                    olfactory_struct_dict.pop(None)
-
-                # As above: receptors with 0 structures are left out entirely, not sent as
-                # Value1: 0, so they render blank rather than being folded into the color scale.
-                updated_olfactory_struct_dict = {
-                    key: {
-                        'Value1': value,
-                    }
-                    for key, value in olfactory_struct_dict.items()
-                    if value > 0
-                }
-
-                gpcr_data_olfactory = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Odorant")
-                Olfactory_updated_data = DataMapperHome.update_nested_GPCRome_data(gpcr_data_olfactory["Data"], updated_olfactory_struct_dict)
-                context['GPCRome_data_olfactory'] = json.dumps(Olfactory_updated_data)
-
-                olfactory_nonzero_values = [v for v in olfactory_struct_dict.values() if v > 0]
-                olfactory_min = min(olfactory_nonzero_values) if olfactory_nonzero_values else 0
-                olfactory_max = max(olfactory_nonzero_values) if olfactory_nonzero_values else 0
-                context['GPCRome_olfactory_stats'] = json.dumps({
-                    'min': olfactory_min,
-                    'max': olfactory_max,
-                    'avg': (olfactory_min + olfactory_max) / 2,
-                })
-
+                                                    ).filter(Q(family_id__slug__startswith='007') | Q(family_id__slug__startswith='008')
+                                                    ).values_list('entry_name', flat=True)
+                olfactory_rows = Structure.objects.filter(structure_type__origin='experiment'
+                                                    ).filter(Q(protein_conformation__protein__family_id__slug__startswith='007') | Q(protein_conformation__protein__family_id__slug__startswith='008')
+                                                    ).values_list('protein_conformation__protein__parent__entry_name',
+                                                                  'protein_conformation__protein__parent__species_id'
+                                                    ).annotate(c=Count('id', distinct=True))
+                for suffix, all_species in (('_all', True), ('', False)):
+                    wheel, stats = self.build_count_wheel(olfactory_rows, all_olfactory, all_species, ortholog_lookup, "Odorant")
+                    context['GPCRome_data_olfactory' + suffix] = json.dumps(wheel)
+                    context['GPCRome_olfactory_stats' + suffix] = json.dumps(stats)
 
         return context
+
+    @staticmethod
+    def get_human_ortholog_lookup():
+        """Map every wild-type receptor entry_name (any species) to the entry_name of its human
+        ortholog, i.e. the human receptor in the same receptor-level ProteinFamily. Human receptors
+        map to themselves; receptors without a human ortholog (viral, yeast, ...) are left out."""
+        human_by_family = dict(Protein.objects.filter(species_id=1, sequence_type__slug='wt', family__slug__startswith='0')
+                               .values_list('family_id', 'entry_name'))
+        return {entry_name: human_by_family[family_id]
+                for entry_name, family_id in Protein.objects.filter(sequence_type__slug='wt', family_id__in=human_by_family.keys())
+                                                            .values_list('entry_name', 'family_id')}
+
+    @staticmethod
+    def place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup):
+        """The GPCRome wheel only has human receptor slots. Human only: keep human receptors as-is.
+        All species: move every receptor onto its human ortholog. None means "not placeable"."""
+        if all_species:
+            return ortholog_lookup.get(entry_name)
+        return entry_name if species_id == 1 else None
+
+    @staticmethod
+    def numeric_wheel_stats(values):
+        nonzero = [v for v in values if v > 0]
+        low = min(nonzero) if nonzero else 0
+        high = max(nonzero) if nonzero else 0
+        return {'min': low, 'max': high, 'avg': (low + high) / 2}
+
+    def build_coverage_wheel(self, rows, wheel_receptors, all_species, ortholog_lookup):
+        """rows: (state slug, receptor entry_name, species_id). Returns the wheel data."""
+        states = {entry_name: set() for entry_name in wheel_receptors}
+        for state, entry_name, species_id in rows:
+            key = self.place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup)
+            if key in states:
+                states[key].add(state)
+
+        def status(receptor_states):
+            if 'active' in receptor_states and 'inactive' in receptor_states:
+                return 'Both'
+            if 'active' in receptor_states:
+                return 'Active'
+            if 'inactive' in receptor_states:
+                return 'Inactive'
+            return 'empty'
+
+        # Mapping for Value2
+        status_color_map = {
+            'Both': 'blue',
+            'Inactive': 'red',
+            'Active': 'forestgreen'
+        }
+        results = {}
+        for entry_name, receptor_states in states.items():
+            value = status(receptor_states)
+            results[entry_name] = {'Value1': value, 'Value2': status_color_map.get(value, '#FFFFFF')}
+
+        gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type="Classic")
+        return DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results)
+
+    def build_count_wheel(self, rows, wheel_receptors, all_species, ortholog_lookup, data_type):
+        """rows: (receptor entry_name, species_id, count). Counts from several species landing on
+        the same human receptor are summed. Returns (wheel data, min/max/avg stats)."""
+        counts = {entry_name: 0 for entry_name in wheel_receptors}
+        for entry_name, species_id, count in rows:
+            key = self.place_on_human_wheel(entry_name, species_id, all_species, ortholog_lookup)
+            if key in counts:
+                counts[key] += count
+
+        # Receptors with 0 are left out entirely (rather than sent as Value1: 0) so they render as
+        # blank/uncolored wedges instead of being pulled into the numeric color scale, and so they
+        # don't skew its min/max.
+        results = {entry_name: {'Value1': value} for entry_name, value in counts.items() if value > 0}
+
+        gpcr_data = DataMapperHome.GenerateGPCRomeDataStructure(data_type=data_type)
+        wheel = DataMapperHome.update_nested_GPCRome_data(gpcr_data["Data"], results)
+        return wheel, self.numeric_wheel_stats(counts.values())
 
     def get_families_dict(self, queryset, lookup, level="family"):
 
@@ -3789,14 +3845,26 @@ def ConvertStructuresToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert 'structure'-typed targets -- anything else (e.g. a 'structure_model'
+        # left behind by an abandoned homology-model-browser visit) is a leftover from an
+        # unrelated flow and is dropped rather than blindly processed, since selection.targets
+        # is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct in selection.targets:
+            if struct.type != 'structure':
+                continue
             prot = struct.item.protein_conformation.protein.parent
             if not prot:
                 prot = struct.item.protein_conformation.protein
-            selection.remove('targets', 'structure', struct.item.id)
-            selection.add('targets', 'protein', SelectionItem('protein', prot))
+            new_targets.append(SelectionItem('protein', prot))
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3813,28 +3881,36 @@ def ConvertStructureModelsToProteins(request):
     if simple_selection:
         selection.importer(simple_selection)
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure' from an unrelated superposition/browser visit) is
+        # dropped rather than blindly processed, since selection.targets is one session-wide
+        # bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'protein'):
+            if struct_mod.type == 'structure_model':
                 if not struct_mod.item.protein.accession:
                     prot = struct_mod.item.protein.parent
                 else:
                     prot = struct_mod.item.protein
-                selection.remove('targets', 'structure_model', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'receptor_protein'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure_complex_receptor':
                 if not struct_mod.item.receptor_protein.accession:
                     prot = struct_mod.item.receptor_protein.parent
                 else:
                     prot = struct_mod.item.receptor_protein
-                selection.remove('targets', 'structure_complex_receptor', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            elif hasattr(struct_mod.item, 'pdb_code'):
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = struct_mod.item.protein_conformation.protein.parent
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
 
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
@@ -3849,25 +3925,37 @@ def ConvertStructureComplexSignprotToProteins(request):
     selection = Selection()
     if simple_selection:
         selection.importer(simple_selection)
+    prot = None
     if selection.targets != []:
+        # Only convert the target types this view actually understands -- anything else
+        # (e.g. a leftover 'structure_model' from an unrelated browser visit) is dropped
+        # rather than blindly assumed to be a signprot-complex Structure (which previously
+        # crashed with SignprotComplex.DoesNotExist for anything that wasn't), since
+        # selection.targets is one session-wide bucket shared by every browsing page.
+        new_targets = []
         for struct_mod in selection.targets:
-            if hasattr(struct_mod.item, 'sign_protein'):
+            if struct_mod.type == 'structure_complex_signprot':
                 prot = struct_mod.item.sign_protein
-                selection.remove('targets', 'structure_complex_signprot', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
-            else:
+                new_targets.append(SelectionItem('protein', prot))
+            elif struct_mod.type == 'structure':
                 prot = SignprotComplex.objects.get(structure=struct_mod.item).protein
-                selection.remove('targets', 'structure', struct_mod.item.id)
-                selection.add('targets', 'protein', SelectionItem('protein', prot))
+                new_targets.append(SelectionItem('protein', prot))
+
         if selection.reference != []:
-            selection.add('targets', 'protein', selection.reference[0])
+            new_targets.append(selection.reference[0])
+            selection.clear('reference')
+        # Replace (not mutate) targets, so anything not explicitly converted above -- for
+        # whatever reason it was sitting there -- can't survive into the alignment selection.
+        selection.clear('targets')
+        for item in new_targets:
+            selection.add('targets', 'protein', item)
     # export simple selection that can be serialized
     simple_selection = selection.exporter()
 
     # add simple selection to session
     request.session['selection'] = simple_selection
 
-    if prot.family.parent.parent.name=='Arrestin':
+    if prot and prot.family.parent.parent.name=='Arrestin':
         return HttpResponseRedirect('/alignment/segmentselectionarrestin')
     else:
         return HttpResponseRedirect('/alignment/segmentselectiongprot')
@@ -4031,7 +4119,9 @@ def prepare_lig_complex_download(mod, scores_obj=None, refined=False):
     # Get ligand name(s)
     ligand_names = [lps.ligand.name for lps in getattr(mod, 'ligandpeptide_structures', [])]
     if ligand_names:
-        ligand_name_str = '_'.join(ligand_names).replace('<sup>','').replace('</sup>','').replace('<sub>','').replace('</sub>','').replace('<i>','').replace('</i>','').replace('<b>','').replace('</b>','')
+        # Strip HTML markup/entities (e.g. &beta;) and anything unsafe in a filename
+        ligand_name_str = html.unescape(strip_tags('_'.join(ligand_names)))
+        ligand_name_str = re.sub(r'[^\w\-]+', '_', ligand_name_str).strip('_')
     else:
         ligand_name_str = 'unknown_ligand'
 
@@ -4099,7 +4189,10 @@ def SingleLigComplexModelDownload(request, modelname, csv=False):
         backup_zip.writestr(mod_name, pdb_io.getvalue())
         backup_zip.writestr(scores_name, scores_io.getvalue())
     response = HttpResponse(zip_io.getvalue(), content_type='application/x-zip-compressed')
-    response['Content-Disposition'] = 'attachment; filename=%s' % mod_name.split('.')[0] + ".zip"
+    # Quoted ASCII fallback plus RFC 6266 UTF-8 filename for non-ASCII ligand names
+    zip_name = os.path.splitext(mod_name)[0] + '.zip'
+    ascii_name = zip_name.encode('ascii', 'ignore').decode()
+    response['Content-Disposition'] = "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(ascii_name, quote(zip_name))
     response['Content-Length'] = zip_io.tell()
 
     return response
@@ -5100,28 +5193,54 @@ class LigandComplexModelsDataJsonView(View):
 
             receptor_ids = [s.protein_conformation.protein_id for s in structures]
             ligand_ids = [s.prefetch_ligands[0].ligand_id for s in structures]
+            # Canonical receptor identity: model structures always sit directly on the reference
+            # protein (parent is None), while annotated experimental structures are a mix of the
+            # reference protein and PDB-specific construct variants (parent set to the reference).
+            # Normalize both sides to the reference protein's entry_name so the two line up.
+            receptor_canonical_entry_names = {
+                s.protein_conformation.protein.parent.entry_name if s.protein_conformation.protein.parent
+                else s.protein_conformation.protein.entry_name
+                for s in structures
+            }
 
             physiological_pairs = set(
                 Endogenous_GTP.objects.filter(ligand_id__in=ligand_ids, receptor_id__in=receptor_ids)
                 .values_list('ligand_id', 'receptor_id')
             )
 
-            # Drugs, matched by (ligand, receptor target) -- see plan's Clinical/Pharm. modality rules
+            # Drugs, matched by (ligand, receptor target) -- Clinical status only, never Pharm. modality
             drugs_by_pair = defaultdict(list)
             for d in Drugs.objects.filter(
                 ligand_id__in=ligand_ids, target_id__in=receptor_ids
-            ).select_related('moa').values('ligand_id', 'target_id', 'drug_status', 'indication_max_phase', 'moa__name'):
+            ).values('ligand_id', 'target_id', 'drug_status', 'indication_max_phase'):
                 drugs_by_pair[(d['ligand_id'], d['target_id'])].append(d)
 
-            def clinical_and_pharm_modality(ligand_id, receptor_id):
+            def clinical_status(ligand_id, receptor_id):
                 rows = drugs_by_pair.get((ligand_id, receptor_id), [])
                 if not rows:
-                    return "No", "-"
-                approved = [r for r in rows if r['drug_status'] == 'Approved']
-                highest_order_rows = approved if approved else rows
-                moas = sorted({r['moa__name'] for r in highest_order_rows if r['moa__name']})
-                clinical = "Approved drug" if approved else "Agent in trial"
-                return clinical, (" / ".join(moas) if moas else "-")
+                    return "No"
+                approved = any(r['drug_status'] == 'Approved' for r in rows)
+                return "Approved drug" if approved else "Agent in trial"
+
+            # Ligand roles, matched by (ligand, receptor's canonical entry_name) -- independent of
+            # Drugs; StructureLigandInteraction.ligand_role is the actual "pharm. modality" source
+            roles_by_pair = defaultdict(set)
+            for r in StructureLigandInteraction.objects.filter(
+                ligand_id__in=ligand_ids,
+                ligand_role__isnull=False,
+            ).annotate(
+                canonical_entry_name=Coalesce(
+                    'structure__protein_conformation__protein__parent__entry_name',
+                    'structure__protein_conformation__protein__entry_name',
+                )
+            ).filter(
+                canonical_entry_name__in=receptor_canonical_entry_names
+            ).values('ligand_id', 'canonical_entry_name', 'ligand_role__name'):
+                roles_by_pair[(r['ligand_id'], r['canonical_entry_name'])].add(r['ligand_role__name'])
+
+            def pharm_modality(ligand_id, canonical_entry_name):
+                roles = roles_by_pair.get((ligand_id, canonical_entry_name), set())
+                return " / ".join(sorted(roles)) if roles else "-"
 
             # ProteinFamilyClassification -- primary (order=1) annotation only
             family_ids = {s.protein_conformation.protein.family_id for s in structures}
@@ -5144,7 +5263,9 @@ class LigandComplexModelsDataJsonView(View):
                 ligand = structure.prefetch_ligands[0].ligand
 
                 is_physiological = (ligand.id, p.id) in physiological_pairs
-                clinical, pharm_modality = clinical_and_pharm_modality(ligand.id, p.id)
+                canonical_entry_name = p.parent.entry_name if p.parent else p.entry_name
+                clinical = clinical_status(ligand.id, p.id)
+                pharm_modality_value = pharm_modality(ligand.id, canonical_entry_name)
 
                 if ligand.ligand_type and ligand.ligand_type.slug == "small-molecule":
                     mol_modality = "Small mol"
@@ -5189,7 +5310,7 @@ class LigandComplexModelsDataJsonView(View):
                         "sequence": ligand.sequence or "",
                     },
                     "mol_modality": mol_modality,
-                    "pharm_modality": pharm_modality,
+                    "pharm_modality": pharm_modality_value,
                     "physiological": "Yes" if is_physiological else "No",
                     "clinical": clinical,
                     # Nested (rather than flat gene_name/protein_name + sibling fields) so that

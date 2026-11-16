@@ -875,22 +875,30 @@
             flareplot[$( "#freq-flare-slider-range-1").data("referenceContainer")].updateRangeTwoGroups(g1[0], g1[1], g2[0], g2[1], diff[0], diff[1]);
         }
 
+        // pdbTableDataReady is the in-flight/settled $.get() promise from
+        // initializePdbChooserTables() below -- the modal's .tableview div starts empty and only
+        // gets its real <table> once that response lands, so showPDBtable() must wait on it
+        // instead of racing it (racing it binds DataTables/yadcf to a table that doesn't exist
+        // yet, throwing "Cannot read properties of undefined (reading 'oInstance')" on the first
+        // "Select Structure" click of a session).
+        var pdbTableDataReady = null;
+
         $('#single-crystal-pdb-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-crystal-pdb-modal-table');
+          $.when(pdbTableDataReady).done(function () { showPDBtable('#single-crystal-pdb-modal-table'); });
         })
         $('#single-crystal-group-pdbs-modal-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#single-crystal-group-pdbs-modal-table');
+          $.when(pdbTableDataReady).done(function () { showPDBtable('#single-crystal-group-pdbs-modal-table'); });
         })
         $('#two-crystal-group-pdbs-modal-1-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-crystal-group-pdbs-modal-1-table');
+          $.when(pdbTableDataReady).done(function () { showPDBtable('#two-crystal-group-pdbs-modal-1-table'); });
         })
         $('#two-crystal-group-pdbs-modal-2-table').on('shown.bs.modal', function (e) {
-          showPDBtable('#two-crystal-group-pdbs-modal-2-table');
+          $.when(pdbTableDataReady).done(function () { showPDBtable('#two-crystal-group-pdbs-modal-2-table'); });
         })
 
 
         function initializePdbChooserTables() {
-          $.get('pdbtabledata', function ( data ) {
+          pdbTableDataReady = $.get('pdbtabledata', function ( data ) {
             $('#single-crystal-pdb-modal-table .tableview').html(data);
             $('#single-crystal-group-pdbs-modal-table .tableview').html(data);
             $('#two-crystal-group-pdbs-modal-1-table .tableview').html(data);

@@ -16,6 +16,7 @@ from residue.models import Residue, ResiduePositionSet
 from mutational_landscape.models import NaturalMutations, PTMs
 
 from common.diagrams_gpcr import DrawHelixBox, DrawSnakePlot
+from angles.models import get_snake_plot_distance_lookup
 
 from interaction.models import ResidueFragmentInteraction
 
@@ -94,7 +95,8 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
                     proteins.append(fp)
 
     # Caching results for unique protein sets
-    cache_key = "VARIATION_"+hashlib.md5(str(proteins).encode('utf-8')).hexdigest()
+    # bump the prefix whenever the cached HelixBox/SnakePlot output changes
+    cache_key = "VARIATION_v2_"+hashlib.md5(str(proteins).encode('utf-8')).hexdigest()
     if not cache_variation.has_key(cache_key) and len(proteins)>0:
         NMs = NaturalMutations.objects.filter(Q(protein__in=proteins)).prefetch_related('residue__generic_number','residue__display_generic_number','residue__protein_segment','protein')
         ptms = PTMs.objects.filter(Q(protein__in=proteins)).prefetch_related('residue')
@@ -159,8 +161,11 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         if target_type == 'family' and len(proteins[0].family.slug) < 15:
             pc = ProteinConformation.objects.get(protein__family__name=familyname, protein__sequence_type__slug='consensus')
             residuelist = Residue.objects.filter(protein_conformation=pc).order_by('sequence_number').prefetch_related('protein_segment', 'generic_number', 'display_generic_number')
+            # consensus sequence numbers don't match any one receptor's structure data
+            distance_lookup = None
         else:
             residuelist = Residue.objects.filter(protein_conformation__protein=proteins[0]).prefetch_related('protein_segment', 'display_generic_number', 'generic_number')
+            distance_lookup = get_snake_plot_distance_lookup(proteins[0])
 
         jsondata = {}
         for NM in NMs:
@@ -218,7 +223,7 @@ def render_variants(request, protein=None, family=None, download=None, receptor_
         # jsondata_cancer_mutations['color'] = linear_gradient(start_hex="#d8baff", finish_hex="#422d65", n=max_cancer_pos)
         # jsondata_disease_mutations['color'] = linear_gradient(start_hex="#ffa1b1", finish_hex="#6e000b", n=max_disease_pos)
         #
-        SnakePlot = DrawSnakePlot(residuelist, "Class A", protein, nobuttons=1)
+        SnakePlot = DrawSnakePlot(residuelist, "Class A", protein, nobuttons=1, residue_distance_lookup=distance_lookup)
         HelixBox = DrawHelixBox(residuelist, 'Class A', protein, nobuttons=1)
 
         cache_data = {'mutations': NMs, 'type': target_type, 'HelixBox': HelixBox, 'SnakePlot': SnakePlot, 'receptor': str(proteins[0].entry_name), 'mutations_pos_list': json.dumps(jsondata), 'natural_mutations_pos_list': json.dumps(jsondata_natural_mutations)}

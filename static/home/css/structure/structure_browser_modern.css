@@ -248,9 +248,11 @@ td.expand_1line {
   position: relative;
 }
 
-td.expand_1line .expanded { 
-  display: none; 
-  white-space: normal; 
+td.expand_1line .expanded {
+  display: none;
+  white-space: normal;
+  overflow-wrap: anywhere; /* break long unbroken names (IUPAC ligands) inside the cell instead of spilling into the next column */
+  hyphens: auto;           /* add "-" at the break where the browser's dictionary allows */
 }
 
 td.expand_1line:hover { 
@@ -262,8 +264,25 @@ td.expand_1line:hover .collapsed {
   display: none; 
 }
 
-td.expand_1line:hover .expanded { 
+td.expand_1line:hover .expanded {
   display: inline;
+}
+
+/* --- Header filters: selected tags must not widen their column ---------------
+   A nowrap select2 chip otherwise feeds its full width into the table's auto
+   column sizing, so one long tag (e.g. an IUPAC ligand name) stretches the
+   column. inline-size containment drops the filter's intrinsic width; the
+   column keeps its title/data width and select2's own max-width:100% +
+   ellipsis truncates the chip (full text stays in the chip's title tooltip). */
+#StructureBrowserTable_wrapper thead .select2-container {
+  contain: inline-size;
+  max-width: 100%;
+}
+
+/* Per-item hover underline so wrapped multi-line names stay distinguishable (aux molecules) */
+td.expand_1line .sb-list-item:hover {
+  text-decoration: underline;
+  cursor: default;
 }
 
 /* --- Selection styling -------------------------------------------------------- */

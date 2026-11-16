@@ -374,6 +374,19 @@ class Command(BaseCommand):
             #         print(f'The Drugs {pmid} publication was not added to the data base'))
 
     @staticmethod
+    def clean_pubchem_cid(value):
+        """
+        pandas reads a numeric-with-NaNs column as float64, so a CID like 2678
+        comes through as the float 2678.0 and str()s to "2678.0". Collapse it
+        back to "2678" here; semicolon-delimited multi-CID strings aren't
+        valid floats so they fall through unchanged.
+        """
+        try:
+            return str(int(float(value)))
+        except (ValueError, TypeError):
+            return str(value)
+
+    @staticmethod
     def fetch_ligand(row):
         """
         fetch ligands with Ligand model
@@ -381,7 +394,7 @@ class Command(BaseCommand):
         """
         #will perform several checks
         mapper = {'chembl_ligand': str(row['ChEMBLID']).split(';'),
-                  'pubchem': str(row['PubChemCID']).split(';'),
+                  'pubchem': Command.clean_pubchem_cid(row['PubChemCID']).split(';'),
                   'drugbank': str(row['DrugBankID']).split(';')}
         check = None
         #Check for match of Inchikey.
@@ -489,7 +502,7 @@ class Command(BaseCommand):
     @staticmethod
     def add_drug_references(ligand, row):
         mapper = {'chembl_ligand': str(row['ChEMBLID']).split(';'),
-                  'pubchem': str(row['PubChemCID']).split(';'),
+                  'pubchem': Command.clean_pubchem_cid(row['PubChemCID']).split(';'),
                   'drugbank': str(row['DrugBankID']).split(';')}
         for key, values in mapper.items():
             for code in values:
