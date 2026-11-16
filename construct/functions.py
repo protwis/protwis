@@ -2092,7 +2092,7 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
         removed = list(range(214,366))
         deletions = []
     elif pdb_code in ['9KDF','9KDG']:
-        removed = list(range(304,463))+list(range(1001,1346))
+        removed = list(range(304,463))+list(range(1001,1357))
         deletions = []
     elif pdb_code=='9UVY':
         removed = list(range(237,623))
@@ -2133,5 +2133,8 @@ def construct_structure_annotation_override(pdb_code, removed, deletions):
     elif pdb_code in ['9EAI','9EAJ']:
         removed = list(range(227,341))
         deletions = []
+    elif pdb_code=='21TY':
+        # Fusion is PDB 209-596 (DBREF); 597- is receptor again (WT 216-)
+        removed = list(range(209,597))
 
     return removed, deletions

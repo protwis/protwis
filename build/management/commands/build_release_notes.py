@@ -87,6 +87,11 @@ class Command(BaseCommand):
             # ['Exp. Gprotein structures', len(gprotein_structs), 'GPCRdb'],
             #['Exp. Arrestin structures', Structure.objects.filter(protein_conformation__protein__family__slug__startswith="200").count()],
             # ['GPCR-G protein structure models', StructureComplexModel.objects.filter(receptor_protein__accession__isnull=False).count(), 'GPCRdb'],
+        # Compounds in trial: non-approved agents plus approved drugs being repurposed
+        # (approved drugs with an ongoing trial, i.e. indication_status 'Active', for another indication)
+        trial_ligands = set(Drugs.objects.exclude(drug_status__iexact='approved').exclude(drug_status__isnull=True).exclude(drug_status='').values_list("ligand_id", flat=True))
+        approved_ligands = set(Drugs.objects.filter(drug_status__iexact='approved').values_list("ligand_id", flat=True))
+        repurposed_ligands = approved_ligands & set(Drugs.objects.filter(indication_max_phase__lt=4, indication_status__iexact='active').values_list("ligand_id", flat=True))
         stats = [
             #GPCRdb Block
             ['Human proteins GPCRdb', Protein.objects.filter(sequence_type__slug='wt', family__slug__startswith='0', species__common_name="Human").count(), 'GPCRdb'],
@@ -96,7 +101,7 @@ class Command(BaseCommand):
             ['GPCR structure models GPCRdb', StructureModel.objects.filter(protein__accession__isnull=False).count(), 'GPCRdb'],
             ['Ligand-GPCR structure models GPCRdb', Structure.objects.filter(structure_type__slug__in=['af-rfaa-sm','af-signprot-peptide','b2-smallmolecule','b2-signprot-smallmolecule','b2-peptide','b2-signprot-peptide']).count(), 'GPCRdb'],
             ['Drugs GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values("ligand_id").distinct().count(), 'GPCRdb'],
-            ['Compounds in trial GPCRdb', Drugs.objects.exclude(drug_status__iexact='approved').exclude(drug_status__isnull=True).exclude(drug_status='').values("ligand_id").distinct().count(), 'GPCRdb'],
+            ['Compounds in trial GPCRdb', len(trial_ligands | repurposed_ligands), 'GPCRdb'],
             ['Drug targets GPCRdb', Drugs.objects.filter(drug_status__iexact='approved').values('target_id').distinct().count(), 'GPCRdb'],
             ['Disease indications GPCRdb', Drugs.objects.values('indication_id').distinct().count(), 'GPCRdb'],
             ['Ligands GPCRdb', Ligand.objects.filter(parent__isnull=True).count(), 'GPCRdb'],

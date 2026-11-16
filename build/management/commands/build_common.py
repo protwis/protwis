@@ -249,7 +249,7 @@ class Command(BaseCommand):
         for key in role_dict.keys():
             for sub_key in role_dict[key].keys():
                 # Determine the effect based on the sub_key value
-                if sub_key in ['Agonist', 'Agonist (partial)', 'Inverse agonist', 'PAM', 'Allosteric agonist', 'Allosteric inverse agonist', 'Ago-PAM']:
+                if sub_key in ['Agonist', 'Agonist (partial)', 'Co-agonist', 'Inverse agonist', 'PAM', 'Allosteric agonist', 'Allosteric inverse agonist', 'Ago-PAM']:
                     effect = LigandEffect.objects.get_or_create(slug='stimulatory', name='Stimulatory')
                 elif sub_key in ['Antagonist', 'NAM', 'Allosteric antagonist']:
                     effect = LigandEffect.objects.get_or_create(slug='inhibitory', name='Inhibitory')
