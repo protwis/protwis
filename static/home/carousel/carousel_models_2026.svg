@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="3780"
+   width="3800"
    height="945"
-   viewBox="0 0 1000.125 250.03125"
+   viewBox="0 0 1005.4167 250.03125"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
@@ -28,13 +28,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showguides="true"
-     inkscape:zoom="0.35355339"
-     inkscape:cx="1849.7913"
-     inkscape:cy="-845.69971"
-     inkscape:window-width="3200"
-     inkscape:window-height="1712"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:zoom="0.5"
+     inkscape:cx="2251"
+     inkscape:cy="-251"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
   <defs
@@ -44,7 +44,7 @@
        inkscape:label="Drop Shadow"
        id="filter4084"
        x="-0.024538582"
-       y="-0.038608327"
+       y="-0.038608328"
        width="1.0429239"
        height="1.0695291">
       <feFlood
@@ -100,10 +100,10 @@
          id="stop2" />
     </linearGradient>
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter2"
-       x="-0.020698194"
+       x="-0.020698193"
        y="-0.013166286"
        width="1.0285268"
        height="1.0425658">
@@ -138,7 +138,7 @@
          id="feComposite2" />
     </filter>
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter4"
        x="-0.020698197"
@@ -188,9 +188,9 @@
        x="0.10571794"
        y="-0.015576017" />
     <rect
-       style="fill:#ffffff;fill-opacity:0.983051;stroke:none;stroke-width:1.21482;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#ffffff;fill-opacity:0.983051;stroke:none;stroke-width:1.23284;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="rect3"
-       width="650.92505"
+       width="670.38226"
        height="250.01515"
        x="334.87576"
        y="0.015495346" />

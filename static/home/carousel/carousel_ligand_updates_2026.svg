@@ -2,16 +2,16 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="3798.3745"
-   height="944.47968"
-   viewBox="0 0 1004.9866 249.89358"
+   width="3800"
+   height="945"
+   viewBox="0 0 1005.4167 250.03125"
    version="1.1"
    id="svg1"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    sodipodi:docname="carousel_ligand_updates_2026.svg"
    inkscape:export-filename="carousel_ligand_updates_2026.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
+   inkscape:export-xdpi="96.041092"
+   inkscape:export-ydpi="96.041092"
    xml:space="preserve"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -28,13 +28,13 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showguides="true"
-     inkscape:zoom="0.36756309"
-     inkscape:cx="1327.6632"
-     inkscape:cy="457.0644"
-     inkscape:window-width="3200"
-     inkscape:window-height="1712"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:zoom="0.70710678"
+     inkscape:cx="1494.8237"
+     inkscape:cy="30.405591"
+     inkscape:window-width="3840"
+     inkscape:window-height="2054"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
      inkscape:window-maximized="1"
      inkscape:current-layer="g1"
      showgrid="false"><inkscape:page
@@ -61,7 +61,7 @@
        empspacing="100"
        enabled="true"
        visible="false" /><sodipodi:guide
-       position="334.92032,-184.79023"
+       position="334.92032,-184.79015"
        orientation="1,0"
        id="guide40"
        inkscape:locked="false" /></sodipodi:namedview><defs
@@ -70,9 +70,9 @@
        inkscape:label="Drop Shadow"
        id="filter34-6"
        x="-0.035992611"
-       y="-0.021262103"
+       y="-0.021262104"
        width="1.0492719"
-       height="1.0697996"><feFlood
+       height="1.0697995"><feFlood
          result="flood"
          in="SourceGraphic"
          flood-opacity="0.094118"
@@ -100,7 +100,7 @@
        style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter34-6-7"
-       x="-0.037028297"
+       x="-0.037028298"
        y="-0.022920385"
        width="1.0513433"
        height="1.0731162"><feFlood
@@ -167,12 +167,12 @@
          style="stop-color:#cadaea;stop-opacity:1;"
          offset="1"
          id="stop2" /></linearGradient><filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter26"
        x="-0.015325223"
-       y="-0.019628874"
-       width="1.0524854"
+       y="-0.019628873"
+       width="1.0524853"
        height="1.0547948"><feFlood
          result="flood"
          in="SourceGraphic"
@@ -206,7 +206,7 @@
        x2="360.37274"
        y2="398.56091"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.17428151,0,0,0.18748545,40.666479,-116.12754)" /></defs><g
+       gradientTransform="matrix(0.17435081,0,0,0.18722034,40.641505,-116.05016)" /></defs><g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
@@ -568,10 +568,10 @@
            x="48.545975"
            y="-32.889771"
            id="tspan11" /></text><rect
-         style="fill:url(#linearGradient2-7);fill-opacity:1;stroke:none;stroke-width:0.350657;stroke-linecap:round;stroke-dasharray:none"
+         style="fill:url(#linearGradient2-7);fill-opacity:1;stroke:none;stroke-width:0.350479;stroke-linecap:round;stroke-dasharray:none"
          id="rect38-0"
-         width="62.687115"
-         height="46.864117"
-         x="40.785671"
-         y="-64.83522"
+         width="62.712044"
+         height="46.797852"
+         x="40.760742"
+         y="-64.830383"
          transform="rotate(90)" /></g></g></svg>
