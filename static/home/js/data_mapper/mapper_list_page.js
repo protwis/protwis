@@ -189,8 +189,12 @@
       $('<option>').val(o.entry).text(mapperListSpeciesLabel(o)).appendTo($sel);
     });
     var validPrev = prevVal && orthologs.some(function (o) { return o.entry === prevVal; });
+    // A no-human-ortholog row resolved from a species entry (e.g. pasted 5HT5B_RAT) keeps that species.
+    var ownEntry = orthologs.some(function (o) { return o.entry === entryId; });
     if (validPrev) {
       $sel.val(prevVal);
+    } else if (ownEntry) {
+      $sel.val(entryId);
     } else {
       var humanOpt = null;
       orthologs.forEach(function (o) { if (o.is_human) humanOpt = o; });
@@ -1021,6 +1025,25 @@
     if (LabelNames === 'UniProt' && meta.uniprot) { return meta.uniprot; }
     return meta.name_plain || '';
   }
+  /** Download button (Mapper_List.html): the input table as .xlsx, receptors named per the Receptor Names mode. */
+  window.mapperListDownloadTable = function () {
+    var isText = $('#mapper-list-input-table').hasClass('mapper-core-text-mode');
+    var cols = isText ? ['cat'] : ['val1', 'val2', 'val3', 'val4'];
+    MapperPageCore.downloadInputTable({
+      tbody: '#mapper-list-input-tbody',
+      headers: isText ? ['Receptor', 'Category'] : ['Receptor'].concat([1, 2, 3, 4].map(function (i) {
+        return ($('#mapper-list-lbl-Val' + i).val() || 'Dot ' + i).trim();
+      })),
+      values: function ($tr) {
+        return cols.map(function (c) { return ($tr.find('.mapper-list-' + c).val() || '').trim(); });
+      },
+      label: mapperListEditSeed,
+      uniprotMode: LabelNames === 'UniProt',
+      speciesSelect: mapperListSpeciesActive ? '.mapper-list-species-select' : null,
+      sheetName: 'List',
+      fileName: 'List_data.xlsx'
+    });
+  };
 
   function mapperListSetResolved($tr, id) {
     var sid = id != null ? String(id).trim() : '';
@@ -1294,6 +1317,23 @@
     return $found;
   }
 
+  function mapperListAppendRowForPaste() {
+    mapperListAppendRow(true);
+    return $('#mapper-list-input-tbody tr').last();
+  }
+
+  /** Puts pasted receptor text on a row, replacing whatever the row held; unresolved text is marked invalid. */
+  function mapperListSetReceptorFromPaste($tr, raw) {
+    var r   = raw != null ? String(raw).trim() : '';
+    var rid = r && window.MAPPER_CORE_RESOLVE ? window.MAPPER_CORE_RESOLVE[r.toUpperCase()] : '';
+    if (rid) { mapperListSetResolved($tr, rid); return; }
+    if (($tr.find('.mapper-core-receptor-entry').val() || '').trim()) mapperListSetResolved($tr, '');
+    $tr.find('.mapper-core-in-receptor').val(r);
+    $tr.toggleClass('mapper-core-row-invalid', !!r);
+    if (r) $tr.data('mapperCoreUnmatchedRaw', r); else $tr.removeData('mapperCoreUnmatchedRaw');
+    mapperListSyncClearBtn($tr);
+  }
+
   // ── Boot ──────────────────────────────────────────────────────────────────────
   function mapperListBoot() {
     $('.mapper-core-booting').removeClass('mapper-core-booting');
@@ -1323,6 +1363,10 @@
               uniprot:    dispText
             };
           }
+          // Every species entry resolves (e.g. a downloaded 5HT5B_RAT), not just the stem's first one.
+          if (window.MAPPER_CORE_RESOLVE && !window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()]) {
+            window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()] = nho.entry;
+          }
 
           if (_seenNhoStems[stem]) return;
           _seenNhoStems[stem] = true;
@@ -1339,6 +1383,8 @@
           if (window.MAPPER_CORE_RESOLVE) {
             window.MAPPER_CORE_RESOLVE[stem.toUpperCase()] = nho.entry;
             window.MAPPER_CORE_RESOLVE[nho.entry.toUpperCase()] = nho.entry;
+            // The cell/download label itself, so "5HT5B (no human ortholog)" resolves when pasted or typed.
+            window.MAPPER_CORE_RESOLVE[dispText.toUpperCase()] = nho.entry;
           }
         });
       }
@@ -1505,29 +1551,35 @@
     $('#mapper-list-input-table').on('paste.mapperListPaste', function (ePz) {
       var ev   = ePz.originalEvent || ePz;
       var text = ev.clipboardData ? ev.clipboardData.getData('text/plain') : '';
-      if (!text || text.indexOf('\t') === -1) return;
+      var pz   = MapperPageCore.classifyPaste(text);
+      if (!pz.kind) return;
+      suppressRedraw = true;
+      if (pz.kind === 'column') {
+        // One value per line, written down the pasted-into column from that row.
+        var handled = MapperPageCore.pasteColumnDown({
+          $tbody: $('#mapper-list-input-tbody'), target: ePz.target, lines: pz.lines,
+          findBlankRow: mapperListFindBlankRow, appendRow: mapperListAppendRowForPaste,
+          setReceptor: mapperListSetReceptorFromPaste
+        });
+        if (!handled) { suppressRedraw = false; return; }
+      } else {
+        pz.lines.forEach(function (ln) {
+          var parts = MapperPageCore.splitPasteLine(ln);
+          var $tr   = mapperListFindBlankRow();
+          if (!$tr.length) $tr = mapperListAppendRowForPaste();
+          mapperListSetReceptorFromPaste($tr, parts[0]);
+          if (!mapperListIsTextMode()) {
+            if (parts[1]) $tr.find('.mapper-list-val1').val(parts[1]);
+            if (parts[2]) $tr.find('.mapper-list-val2').val(parts[2]);
+            if (parts[3]) $tr.find('.mapper-list-val3').val(parts[3]);
+            if (parts[4]) $tr.find('.mapper-list-val4').val(parts[4]);
+          } else {
+            if (parts[1]) $tr.find('.mapper-list-cat').val(parts[1]);
+          }
+        });
+      }
       ePz.preventDefault();
       $('#mapper-list-clear-rows').removeClass('mapper-core-clear-clean');
-      suppressRedraw = true;
-      text.split(/\r?\n/).forEach(function (ln) {
-        if (!ln.trim()) return;
-        var parts = ln.split('\t');
-        var rawR  = (parts[0] || '').trim();
-        var $tr   = mapperListFindBlankRow();
-        if (!$tr.length) { mapperListAppendRow(true); $tr = $('#mapper-list-input-tbody tr').last(); }
-        $tr.find('.mapper-core-in-receptor').val(rawR);
-        var up = rawR.toUpperCase();
-        var rid = window.MAPPER_CORE_RESOLVE && window.MAPPER_CORE_RESOLVE[up];
-        if (rid) { mapperListSetResolved($tr, rid); }
-        if (!mapperListIsTextMode()) {
-          if (parts[1]) $tr.find('.mapper-list-val1').val((parts[1]||'').trim());
-          if (parts[2]) $tr.find('.mapper-list-val2').val((parts[2]||'').trim());
-          if (parts[3]) $tr.find('.mapper-list-val3').val((parts[3]||'').trim());
-          if (parts[4]) $tr.find('.mapper-list-val4').val((parts[4]||'').trim());
-        } else {
-          if (parts[1]) $tr.find('.mapper-list-cat').val((parts[1]||'').trim());
-        }
-      });
       suppressRedraw = false;
       mapperListEnsureTrailingBlankRow();
       mapperListSyncRemoveButtons(); mapperListCompactReceptors();

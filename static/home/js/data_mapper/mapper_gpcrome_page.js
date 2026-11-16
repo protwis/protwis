@@ -3081,29 +3081,19 @@ $(document).ready(function() {
   }
   $('.mapper-core-booting').removeClass('mapper-core-booting');
 });
+/** Download button: the input table as .xlsx, receptors named per the Receptor Names mode. */
 function mapperWheelDownloadTable() {
   var isText = $('#mapper-core-input-table').hasClass('mapper-core-text-mode');
-  var headers = ['Receptor', isText ? 'Category' : 'Number'];
-  var rows = [headers];
-  $('#mapper-wheel-input-tbody tr').each(function() {
-    var $tr = $(this);
-    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
-    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
-    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
-    var receptor = '';
-    if (entryId && MAPPER_CORE_ENTRY_META && MAPPER_CORE_ENTRY_META[entryId]) {
-      receptor = MAPPER_CORE_ENTRY_META[entryId].name_plain || MAPPER_CORE_ENTRY_META[entryId].text || entryId;
-    } else if (unmatched != null && String(unmatched).trim()) {
-      receptor = String(unmatched).trim();
-    } else {
-      receptor = ta;
-    }
-    if (!receptor) return;
-    var val = ($tr.find('.mapper-wheel-in-value').val() || '').trim();
-    rows.push([receptor, val]);
+  MapperPageCore.downloadInputTable({
+    tbody: '#mapper-wheel-input-tbody',
+    headers: ['Receptor', isText ? 'Category' : 'Number'],
+    values: function($tr) {
+      return [($tr.find('.mapper-wheel-in-value').val() || '').trim()];
+    },
+    label: mapperWheelReceptorEditSeed,
+    uniprotMode: mapperWheelWheelLabelType() === 'Uniprot',
+    speciesSelect: null,
+    sheetName: 'GPCRome Wheel',
+    fileName: 'GPCRome_Wheel_data.xlsx'
   });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, 'GPCRome Wheel');
-  XLSX.writeFile(wb, 'GPCRome_Wheel_data.xlsx');
 }

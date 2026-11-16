@@ -1617,7 +1617,14 @@ def ServeUprightPdbDiagram(request, pdbname):
     return HttpResponse(out_stream.getvalue(), content_type='chemical/x-pdb')
 
 def ServePdbLigandDiagram(request,pdbname,ligand):
-    pair = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True).get()
+    pairs = StructureLigandInteraction.objects.filter(structure__pdb_code__index=pdbname).filter(Q(ligand__inchikey=ligand) | Q(ligand__name=ligand)).exclude(pdb_file__isnull=True)
+    # A ligand can have several anchors (one per binding copy); ?chain_res=R:401 picks one.
+    chain_res = request.GET.get('chain_res')
+    if chain_res:
+        pairs = pairs.filter(chain_res=chain_res)
+    pair = pairs.order_by('id').first()
+    if pair is None:
+        return HttpResponseNotFound("No ligand complex for this structure")
     response = HttpResponse(pair.pdb_file.pdb, content_type='text/plain')
     return response
 
@@ -1647,13 +1654,26 @@ def ServeCleanPdbDiagram(request, pdbname, ligname):
     if not interactions:
         return HttpResponseNotFound("Ligand not found in this structure")
 
+    # A ligand can have several anchors (one per binding copy); all are kept unless
+    # ?chain_res=R:401 and/or ?role=agonist (role name or slug) pick some.
+    chain_res = request.GET.get('chain_res')
+    if chain_res:
+        interactions = [i for i in interactions if (i.chain_res or '').replace(' ', '') == chain_res.replace(' ', '')]
+    role = request.GET.get('role')
+    if role:
+        interactions = [i for i in interactions if i.ligand_role and role.lower() in (i.ligand_role.name.lower(), i.ligand_role.slug)]
+    if not interactions:
+        return HttpResponseNotFound("No anchor of this ligand matches the chain_res/role filter")
+
     lig_code = interactions[0].pdb_reference.upper()
     lig_code_variants = {lig_code}
     if len(lig_code) > 3:
         lig_code_variants.add(lig_code[:3])
     no_coordinates_anywhere = all(not i.chain_res for i in interactions)
 
-    if interactions[0].ligand.ligand_type.slug in ('peptide', 'protein'):
+    # Peptide anchors are 'pep' with a bare chain as chain_res; some of their Ligand
+    # records are typed small-molecule, so the anchor decides, not the ligand type.
+    if lig_code == 'PEP' or interactions[0].ligand.ligand_type.slug in ('peptide', 'protein'):
         # Peptide/protein ligands are whole polymer chains (plain ATOM records,
         # no HETATM), so they're extracted by chain rather than by residue name.
         # Always fetched live from the structure - StructureLigandInteraction.pdb_file

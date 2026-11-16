@@ -2113,7 +2113,7 @@ def contactMutationDesign(request, goal = "both"):
                     # Verify ligand modality agreement
                     good_roles =["Agonist", "Apo (no ligand)", "PAM" ]
                     for l in s.ligands.all():
-                        if l.ligand_role.name not in good_roles:
+                        if l.ligand_role is None or l.ligand_role.name not in good_roles:
                             continue
 
                     # MAKE A LIST AND MATCH
@@ -2184,7 +2184,7 @@ def contactMutationDesign(request, goal = "both"):
                     # Verify ligand modality agreement
                     good_roles =["Antagonist", "Inverse agonist", "Apo (no ligand)", "NAM" ]
                     for l in s.ligands.all():
-                        if l.ligand_role.name not in good_roles:
+                        if l.ligand_role is None or l.ligand_role.name not in good_roles:
                             continue
 
                     # MAKE A LIST AND MATCH

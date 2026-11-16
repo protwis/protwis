@@ -17,7 +17,7 @@ from common.models import WebResource, WebLink, Publication
 from protein.models import Protein, ProteinSegment, ProteinConformation, ProteinState
 from residue.functions import dgn
 from residue.models import Residue, ResidueGenericNumberEquivalent
-from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType
+from structure.models import Structure, Rotamer, PdbData, StructureStabilizingAgent, StructureType, StructureAuxiliarySmallMolecule
 from signprot.models import SignprotStructure
 from ligand.models import Endogenous_GTP, Ligand, LigandPeptideStructure
 from interaction.models import StructureLigandInteraction, ResidueFragmentInteraction
@@ -1542,6 +1542,63 @@ class ParseStructureCSV(AbsParseStructureCSV):
 
     def parse_parent_segends(self):
         self.parent_segends = self.parse_yaml_file('non_xtal_segends.yaml')
+
+
+def resolve_small_molecule_chain(ligand, chain_candidates, preferred_chain):
+    """Narrow a multi-chain small-molecule ligand row to its preferred-chain copy, in place.
+
+    Returns a warning message when no Residue_seq_id token names the preferred chain, else None.
+    """
+    rsid_parts = [p.strip() for p in (ligand.get('residue_seq_id') or '').split(',') if p.strip()]
+    label_parts = [p.strip() for p in (ligand.get('label_asym_id') or '').split(',') if p.strip()]
+
+    match_index = next((i for i, rsid in enumerate(rsid_parts)
+                         if ':' in rsid and rsid.split(':', 1)[0].strip() == preferred_chain), None)
+    if match_index is not None:
+        ligand['chain'] = preferred_chain
+        ligand['residue_seq_id'] = rsid_parts[match_index]
+        if match_index < len(label_parts):
+            ligand['label_asym_id'] = label_parts[match_index]
+        return None
+
+    if preferred_chain in chain_candidates:
+        ligand['chain'] = preferred_chain
+        return None
+    ligand['chain'] = chain_candidates[0]
+    return 'Ligand {} chain candidates {} had no Residue_seq_id match for preferred chain {} - defaulting to first'.format(
+        ligand.get('name'), chain_candidates, preferred_chain)
+
+
+def auxiliary_small_molecule_rows(structure, mols):
+    """Unsaved StructureAuxiliarySmallMolecule rows for the preferred-chain copies of ``mols``.
+
+    ``mols`` are the parsed auxiliary_small_molecules.tsv rows of this structure.
+    """
+    rows = OrderedDict()
+    for mol in mols:
+        for pair in mol['residue_seq_ids']:
+            parts = pair.split(':')
+            if len(parts) != 2:
+                continue
+            chain, resid = parts[0].strip(), parts[1].strip()
+            if chain != structure.preferred_chain:
+                continue
+            # first row wins for a copy listed twice, as the build's get_or_create did
+            rows.setdefault((mol['name'], chain, int(resid)), StructureAuxiliarySmallMolecule(
+                structure=structure, name=mol['name'], chain=chain, residue_seq_id=int(resid),
+                title=mol['title'], type=mol['type'], function=mol['function']))
+    return list(rows.values())
+
+
+def sync_auxiliary_small_molecules(structure, mols):
+    """Replace the structure's auxiliary small molecules with the preferred-chain copies of ``mols``.
+
+    The annotation file is the source of truth, so rows that left it or changed Function are not kept.
+    """
+    rows = auxiliary_small_molecule_rows(structure, mols)
+    StructureAuxiliarySmallMolecule.objects.filter(structure=structure).delete()
+    StructureAuxiliarySmallMolecule.objects.bulk_create(rows)
+    return rows
 
 
 class StructureBuildCheck():

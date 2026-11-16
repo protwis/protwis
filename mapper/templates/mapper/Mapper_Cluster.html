@@ -373,37 +373,4 @@ window.MAPPER_CORE_ENTRY_META = {};
 </script>
 <script src="{% static 'home/js/data_mapper/mapper_page_core.js' %}"></script>
 <script src="{% static 'home/js/data_mapper/mapper_cluster_page.js' %}"></script>
-<script>
-function mapperClusterDownloadTable() {
-  var isText = $('#mapper-cluster-input-table').hasClass('mapper-core-text-mode');
-  var headers = isText
-    ? ['Receptor', 'Category', 'Position']
-    : ['Receptor', 'Gradient', 'Position'];
-  var rows = [headers];
-  $('#mapper-cluster-input-tbody tr').each(function() {
-    var $tr = $(this);
-    var entryId = ($tr.find('.mapper-core-receptor-entry').val() || '').trim();
-    var unmatched = $tr.data('mapperCoreUnmatchedRaw');
-    var ta = ($tr.find('.mapper-core-in-receptor').val() || '').trim();
-    var receptor = '';
-    if (entryId && window.MAPPER_CORE_ENTRY_META && window.MAPPER_CORE_ENTRY_META[entryId]) {
-      receptor = window.MAPPER_CORE_ENTRY_META[entryId].name_plain || window.MAPPER_CORE_ENTRY_META[entryId].text || entryId;
-    } else if (unmatched != null && String(unmatched).trim()) {
-      receptor = String(unmatched).trim();
-    } else {
-      receptor = ta;
-    }
-    if (!receptor) return;
-    var val = isText
-      ? ($tr.find('.mapper-cluster-cat').val() || '').trim()
-      : ($tr.find('.mapper-cluster-gradient').val() || '').trim();
-    var pos = ($tr.find('.mapper-cluster-pos').val() || '').trim();
-    rows.push([receptor, val, pos]);
-  });
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb, ws, 'Cluster');
-  XLSX.writeFile(wb, 'Cluster_data.xlsx');
-}
-</script>
 {% endblock %}
