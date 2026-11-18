@@ -28,10 +28,10 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      inkscape:zoom="0.672594"
-     inkscape:cx="1950.6567"
+     inkscape:cx="3412.1625"
      inkscape:cy="205.91917"
-     inkscape:window-width="3840"
-     inkscape:window-height="2054"
+     inkscape:window-width="2880"
+     inkscape:window-height="1694"
      inkscape:window-x="-11"
      inkscape:window-y="-11"
      inkscape:window-maximized="1"
@@ -98,7 +98,7 @@
          id="tspan83"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Arial;-inkscape-font-specification:'Arial Bold';fill:#000000;stroke:none;stroke-width:0.79375"
          x="830.05499"
-         y="20.054663">Sequence similarity trees</tspan></text><image
+         y="20.054663">Structure similarity trees</tspan></text><image
        width="210.28816"
        height="183.21056"
        preserveAspectRatio="none"
